@@ -1,41 +1,40 @@
-import { auth } from "@clerk/nextjs/server";
 import Image from "next/image";
 import Link from "next/link";
 
 interface Props {
   id: string;
-  currentUserId: string;
-  parentId: string;
+  _currentUserId?: string;
+  _parentId?: string;
   content: string;
   author: {
     name: string;
     image: string;
     id: string;
   };
-  community: {
+  _community?: {
     id: string;
     name: string;
     image: string;
   } | null;
 
-  createdAt: string;
+  _createdAt?: string;
   comments: {
     author: {
       image: string;
     };
   }[];
 
-  isComment?: Boolean;
+  isComment?: boolean;
 }
 
 const ThreadCard = ({
   id,
-  currentUserId,
-  parentId,
+  _currentUserId,
+  _parentId,
   content,
   author,
-  community,
-  createdAt,
+  _community,
+  _createdAt,
   comments,
   isComment,
 }: Props) => {

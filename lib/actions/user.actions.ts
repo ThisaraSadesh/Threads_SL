@@ -37,8 +37,8 @@ export async function updateUser({
     if (path === "/profile/edit") {
       revalidatePath(path);
     }
-  } catch (error: any) {
-    throw new Error(`Failed to create/update user:${error.message}`);
+  } catch (error) {
+    throw new Error(`Failed to create/update user:${error}`);
   }
 }
 
@@ -51,8 +51,8 @@ export async function fetchUser(userId: string) {
     //     path:'communities',
     //     model:Community
     // });
-  } catch (error: any) {
-    throw new Error(`failed to fetch User ${error.message}`);
+  } catch (error) {
+    throw new Error(`failed to fetch User ${error}`);
   }
 }
 
@@ -74,8 +74,8 @@ export async function fetchUserPosts(userId: string) {
     });
 
     return userThreads;
-  } catch (error: any) {
-    throw new Error(error);
+  } catch (error) {
+    throw new Error('error fetching user posts');
   }
 }
 
@@ -144,7 +144,7 @@ export async function getActivity(userId: string) {
     })
 
     return replies;
-  } catch (error: any) {
-    throw new Error(`Failed to fetch activity :${error.message}`);
+  } catch (error) {
+    throw new Error(`Failed to fetch activity :${error}`);
   }
 }

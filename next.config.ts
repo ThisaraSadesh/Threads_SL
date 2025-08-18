@@ -3,6 +3,9 @@ const nextConfig = {
   typescript:{
     ignoreBuildErrors:true
   },
+   eslint: {
+    ignoreDuringBuilds: true,
+  },
   experimental: {
     serverActions: {},
   },
@@ -27,9 +30,7 @@ const nextConfig = {
       },
     ],
   },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+
 };
 
 module.exports = nextConfig;

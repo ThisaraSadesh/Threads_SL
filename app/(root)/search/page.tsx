@@ -1,10 +1,7 @@
-import ProfileHeader from "@/components/shared/ProfileHeader";
 import { fetchUser, fetchUsers } from "@/lib/actions/user.actions";
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { profileTabs } from "@/constants";
-import Image from "next/image";
-import ThreadsTab from "@/components/shared/ThreadsTab";
+
 import UserCard from "@/components/cards/UserCard";
 async function Page() {
   const user = await currentUser();
@@ -33,7 +30,7 @@ async function Page() {
         {result?.users.length === 0 ? (
           <p className="no-result">No users</p>
         ) : (
-          <> 
+          <>
             {result?.users.map((user) => (
               <UserCard
                 key={user.id}
