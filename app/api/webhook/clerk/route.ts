@@ -34,6 +34,14 @@ type Event = {
   type: EventType;
 };
 
+// Add GET handler for testing
+export const GET = async () => {
+  return NextResponse.json(
+    { message: "Webhook endpoint is working" },
+    { status: 200 }
+  );
+};
+
 export const POST = async (request: Request) => {
   console.log("🚀 Webhook received!");
 
@@ -67,7 +75,11 @@ export const POST = async (request: Request) => {
       heads as IncomingHttpHeaders & WebhookRequiredHeaders
     ) as Event;
   } catch (err) {
-    return NextResponse.json({ message: err }, { status: 400 });
+    console.log("Webhook verification failed:", err);
+    return NextResponse.json(
+      { message: "Webhook verification failed" },
+      { status: 400 }
+    );
   }
 
   const eventType: EventType = evnt?.type!;
@@ -91,7 +103,10 @@ export const POST = async (request: Request) => {
         created_by
       );
 
-      return NextResponse.json({ message: "User created" }, { status: 201 });
+      return NextResponse.json(
+        { message: "Community created" },
+        { status: 201 }
+      );
     } catch (err) {
       console.log(err);
       return NextResponse.json(
@@ -134,10 +149,7 @@ export const POST = async (request: Request) => {
       // @ts-ignore
       await addMemberToCommunity(organization.id, public_user_data.user_id);
 
-      return NextResponse.json(
-        { message: "Invitation accepted" },
-        { status: 201 }
-      );
+      return NextResponse.json({ message: "Member added" }, { status: 201 });
     } catch (err) {
       console.log(err);
 
@@ -181,7 +193,10 @@ export const POST = async (request: Request) => {
       // @ts-ignore
       await updateCommunityInfo(id, name, slug, logo_url);
 
-      return NextResponse.json({ message: "Member removed" }, { status: 201 });
+      return NextResponse.json(
+        { message: "Community updated" },
+        { status: 201 }
+      );
     } catch (err) {
       console.log(err);
 
