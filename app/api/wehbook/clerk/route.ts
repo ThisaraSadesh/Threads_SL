@@ -35,6 +35,8 @@ type Event = {
 };
 
 export const POST = async (request: Request) => {
+    console.log("🚀 Webhook received!"); 
+
   const payload = await request.json();
   const header = headers();
 
@@ -67,7 +69,7 @@ export const POST = async (request: Request) => {
     // Show what evnt?.data sends from above resource
     const { id, name, slug, logo_url, image_url, created_by } =
       evnt?.data ?? {};
-    console.log('event creation called');
+  
     try {
       // @ts-ignore
       await createCommunity(

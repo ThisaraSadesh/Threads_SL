@@ -17,7 +17,7 @@ export async function createCommunity(
   createdById: string // Change the parameter name to reflect it's an id
 ) {
   try {
-    connectToDB();
+    await connectToDB();
     console.log('data',id,name,username);
     // Find the user with the provided unique id
     const user = await User.findOne({ id: createdById });
@@ -117,7 +117,7 @@ export async function fetchCommunities({
 }) {
   try {
     connectToDB();
-
+    console.log('REQUEST search',searchString);
     // Calculate the number of communities to skip based on the page number and page size.
     const skipAmount = (pageNumber - 1) * pageSize;
 
@@ -144,6 +144,8 @@ export async function fetchCommunities({
       .skip(skipAmount)
       .limit(pageSize)
       .populate("members");
+
+
 
     // Count the total number of communities that match the search criteria (without pagination).
     const totalCommunitiesCount = await Community.countDocuments(query);

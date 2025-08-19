@@ -1,12 +1,18 @@
 import { fetchUser, fetchUsers } from "@/lib/actions/user.actions";
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
+import Searchbar from "@/components/shared/Searchbar";
 
-import UserCard from "@/components/cards/UserCard";
 import { fetchCommunities } from "@/lib/actions/community.actions";
 import CommunityCard from "@/components/cards/CommunityCard";
-async function Page() {
+async function Page({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string }>;
+}) {
   const user = await currentUser();
+  const params = await searchParams;
+  const q = params.q;
 
   if (!user) return null;
 
@@ -18,16 +24,15 @@ async function Page() {
   }
 
   const result = await fetchCommunities({
-  
-    searchString: "",
+    searchString: q,
     pageNumber: 1,
     pageSize: 25,
   });
 
   return (
     <section>
-      <h1 className="head-text mb-10">Search</h1>
-
+      <h1 className="head-text mb-10">Communities</h1>
+      <Searchbar routeType="communities" />
       <div className="mt-14 flex flex-col gap-9">
         {result?.communities.length === 0 ? (
           <p className="no-result">No users</p>
