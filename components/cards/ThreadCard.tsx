@@ -40,6 +40,8 @@ const ThreadCard = ({
   comments,
   isComment,
 }: Props) => {
+        {console.log('community',community)}
+
   return (
     <article
       className={`flex w-full flex-col rounded-xl ${

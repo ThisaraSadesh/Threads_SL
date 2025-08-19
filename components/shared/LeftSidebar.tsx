@@ -3,14 +3,17 @@
 import Image from "next/image";
 import Link from "next/link";
 import { sidebarLinks } from "@/constants";
-import { usePathname, useRouter } from "next/navigation";
-import { SignedIn, SignOutButton, useAuth } from "@clerk/nextjs";
+import { usePathname } from "next/navigation";
+import { SignedIn, SignOutButton } from "@clerk/nextjs";
+import { useAuth } from "@clerk/nextjs";
 
 function LeftSidebar() {
-  const route = useRouter();
   const pathname = usePathname();
-  const { userId } = useAuth();
-
+  const { userId, isLoaded } = useAuth();
+  if (!isLoaded) {
+    // Clerk is still loading, you can show a skeleton or nothing
+    return null;
+  }
   return (
     <section className="custom-scrollbar leftsidebar">
       <div className="flex w-full flex-1 flex-col gap-6 px-6">
@@ -19,9 +22,8 @@ function LeftSidebar() {
             (pathname.includes(link.route) && link.route.length > 1) ||
             pathname === link.route;
 
-          if (link.route === "/profile") {
+          if (link.route === "/profile" && userId) {
             link.route = `${link.route}/${userId}`;
-            console.log("useId from auth", userId);
           }
 
           return (
