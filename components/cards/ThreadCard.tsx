@@ -1,23 +1,25 @@
+import Community from "@/lib/models/community.model";
+import { formatDateString } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
 
 interface Props {
   id: string;
-  _currentUserId?: string;
-  _parentId?: string;
+  currentUserId: string;
+  parentId: string;
   content: string;
   author: {
     name: string;
     image: string;
     id: string;
   };
-  _community?: {
+  community: {
     id: string;
     name: string;
     image: string;
   } | null;
 
-  _createdAt?: string;
+  createdAt: string;
   comments: {
     author: {
       image: string;
@@ -29,12 +31,12 @@ interface Props {
 
 const ThreadCard = ({
   id,
-  _currentUserId,
-  _parentId,
+  currentUserId,
+  parentId,
   content,
   author,
-  _community,
-  _createdAt,
+  community,
+  createdAt,
   comments,
   isComment,
 }: Props) => {
@@ -66,7 +68,7 @@ const ThreadCard = ({
               </h4>
             </Link>
             <p className="mt-2 text-small-regular text-light-2">{content}</p>
-            <div className={`${isComment&& 'mb-10'} mt-5 flex flex-col gap-3`}>
+            <div className={`${isComment && "mb-10"} mt-5 flex flex-col gap-3`}>
               <div className="flex gap-3.5">
                 <Image
                   src="/assets/heart-gray.svg"
@@ -111,7 +113,29 @@ const ThreadCard = ({
             </div>
           </div>
         </div>
+
+        {/*TODO:DeletedThread*/}
+        {/*TODO:show comment logos*/}
+
       </div>
+        {!isComment && community && (
+          <Link
+            href={`/communities/${community.id}`}
+            className="mt-5 flex items-center"
+          >
+            <p className="text-subtle-medium text-gray-1">
+              {formatDateString(createdAt)}-{Community.name} Community
+            </p>
+
+            <Image
+            src={community.image}
+            alt={community.name}
+            width={14}
+            height={14}
+            className="ml-1 rounded-full object-cover"
+            />
+          </Link>
+        )}
     </article>
   );
 };

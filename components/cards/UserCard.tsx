@@ -8,10 +8,10 @@ interface Props {
   name: string;
   username: string;
   imgUrl: string;
-  _personType?: string;
+  personType?: string;
 }
 
-const UserCard = ({ id, name, username, imgUrl, _personType }: Props) => {
+const UserCard = ({ id, name, username, imgUrl, personType }: Props) => {
   const router = useRouter();
   return (
     <article className="user-card">

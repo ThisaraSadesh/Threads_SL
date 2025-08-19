@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import Thread from "../models/thread.model";
 import User from "../models/user.model";
 import { connectToDB } from "../mongoose";
+import Community from "../models/community.model";
 
 interface Params {
   text: string;
@@ -46,15 +47,27 @@ export async function createThread({
   path,
 }: Params) {
   await connectToDB();
+
+  const communityIdObject = await Community.findOne(
+    { id: communityId },
+    { _id: 1 }
+  );
+
   const createdThread = await Thread.create({
     text,
     author,
-    community: null,
+    community: communityIdObject,
   });
 
   await User.findByIdAndUpdate(author, {
     $push: { threads: createdThread._id },
   });
+
+  if (communityIdObject) {
+    await Community.findByIdAndUpdate(communityIdObject, {
+      $push: { threads: createdThread._id },
+    });
+  }
 
   revalidatePath(path);
 }
@@ -108,20 +121,19 @@ export async function addCommentToThread(
       throw new Error("Thread not found");
     }
 
-    const commentThread=new Thread({
-      text:commentText,
-      author:userId,
-      parentId:threadId
-    })
+    const commentThread = new Thread({
+      text: commentText,
+      author: userId,
+      parentId: threadId,
+    });
 
-    const savedCommentThread=await commentThread.save();
+    const savedCommentThread = await commentThread.save();
 
     originalThread.children.push(savedCommentThread._id);
 
     await originalThread.save();
 
     revalidatePath(path);
-
   } catch (error: any) {
     throw new Error(`Error adding comment to thread: ${error.message}`);
   }
