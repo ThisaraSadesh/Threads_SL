@@ -44,7 +44,7 @@ const ThreadCard = ({
 
   return (
     <article
-      className={`flex w-full flex-col rounded-xl ${
+      className={`flex w-full flex-col rounded-xl h-full ${
         isComment ? "px-0 xs:px-7" : "bg-dark-2 p-7"
       }`}
     >
@@ -123,18 +123,20 @@ const ThreadCard = ({
         {!isComment && community && (
           <Link
             href={`/communities/${community.id}`}
-            className="mt-5 flex items-center"
+            className="mt-5 flex items-center w-full h-[60px] gap-2"
           >
             <p className="text-subtle-medium text-gray-1">
-              {formatDateString(createdAt)}-{Community.name} Community
+              {formatDateString(createdAt)}-{community.name} Community
             </p>
 
             <Image
+            
             src={community.image}
             alt={community.name}
-            width={14}
-            height={14}
-            className="ml-1 rounded-full object-cover"
+            width={20}
+            height={20}
+
+            className="w-[20] h-[20] rounded-full"
             />
           </Link>
         )}

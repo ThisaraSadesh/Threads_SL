@@ -18,7 +18,7 @@ async function Page({ params }: { params: { id: string } }) {
   return (
     <section>
       <ProfileHeader
-        accountId={communityDetails.id}
+        accountId={communityDetails._id}
         authUserId={user.id}
         name={communityDetails.name}
         username={communityDetails.username}
@@ -53,7 +53,7 @@ async function Page({ params }: { params: { id: string } }) {
           <TabsContent value="threads" className="w-full text-light-1">
             <ThreadsTab
               currentUserId={user.id}
-              accountId={communityDetails.id}
+              accountId={communityDetails._id}
               accountType="Community"
             />
           </TabsContent>
@@ -76,7 +76,7 @@ async function Page({ params }: { params: { id: string } }) {
              <TabsContent value="requests" className="w-full text-light-1">
             <ThreadsTab
               currentUserId={user.id}
-              accountId={communityDetails.id}
+              accountId={communityDetails._id}
               accountType="Community"
             />
           </TabsContent>

@@ -7,7 +7,7 @@ const user=await currentUser();
 
   // If user is already signed in, redirect instead of showing <SignIn/>
   if (user) {
-    redirect("/"); // 👈 change to dashboard or /onboarding if you prefer
+    redirect("/onboarding"); // Change this to avoid redirect loop
   }
 
   return (
