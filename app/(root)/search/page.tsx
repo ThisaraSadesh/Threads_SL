@@ -2,15 +2,17 @@ import { fetchUser, fetchUsers } from "@/lib/actions/user.actions";
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Searchbar from "@/components/shared/Searchbar";
+import Pagination from "@/components/shared/Pagination";
 
 import UserCard from "@/components/cards/UserCard";
 async function Page({
   searchParams,
 }: {
-  searchParams:Promise< { [key: string]: string }>;
+  searchParams: Promise<{ [key: string]: string }>;
 }) {
-  const params=await searchParams;
-  const  q  =params.q;
+  const params = await searchParams;
+  const q = params.q;
+  const page = Number(params.page)||1;
   const user = await currentUser();
 
   if (!user) return null;
@@ -25,9 +27,11 @@ async function Page({
   const result = await fetchUsers({
     userId: user.id,
     searchString: q,
-    pageNumber: 1,
-    pageSize: 25,
+    pageNumber: page,
+    pageSize: 1,
   });
+
+  console.log('RESULT FROM DB',result);
 
   return (
     <section>
@@ -50,7 +54,15 @@ async function Page({
             ))}
           </>
         )}
+
+      
       </div>
+      
+        <Pagination
+          pageNumber={page ? +page : 1}
+          isNext={result.isNext}
+          path="search"
+        />
     </section>
   );
 }
