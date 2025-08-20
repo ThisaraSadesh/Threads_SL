@@ -40,7 +40,6 @@ const ThreadCard = ({
   comments,
   isComment,
 }: Props) => {
-        {console.log('community',community)}
 
   return (
     <article

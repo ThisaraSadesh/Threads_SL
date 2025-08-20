@@ -41,3 +41,9 @@ export function formatThreadCount(count: number): string {
     return `${threadCount} ${threadWord}`;
   }
 }
+
+
+export function checkActiveUsers(channelName:string,Users:string[]){
+  
+
+}
