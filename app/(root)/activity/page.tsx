@@ -31,7 +31,7 @@ async function Page() {
                     alt="Profile Picture"
                     width={20}
                     height={20}
-                    className="rounded-full object-cover"
+                    className="rounded-full object-cover w-[20px] h-[20px]"
                   />
 
                   <p className="!text-small-regular text-light-1">
