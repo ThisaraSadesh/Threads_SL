@@ -11,6 +11,9 @@ interface AblyClientProviderProps {
 // Create context for Ably client
 const AblyContext = createContext<Ably.Realtime | null>(null);
 
+// Export the context so it can be used by other hooks
+export { AblyContext };
+
 export const useAbly = () => {
   const client = useContext(AblyContext);
   if (!client) {

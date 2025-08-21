@@ -49,18 +49,22 @@ export async function fetchPosts(pageNumber = 1, pageSize = 20) {
 }
 
 interface Params {
-  text: string,
-  author: string,
-  communityId: string | null,
-  path: string,
+  text: string;
+  author: string;
+  communityId: string | null;
+  path: string;
 }
 
-export async function createThread({ text, author, communityId, path }: Params
-) {
+export async function createThread({
+  text,
+  author,
+  communityId,
+  path,
+}: Params) {
   try {
     connectToDB();
 
-    console.log('community ID',communityId);
+    console.log("community ID", communityId);
 
     const communityIdObject = await Community.findOne(
       { id: communityId },
@@ -168,18 +172,17 @@ export async function fetchThreadById(threadId: string) {
         path: "author",
         model: User,
         select: "_id id name image",
-      }) // Populate the author field with _id and username
+      }) 
       .populate({
         path: "community",
         model: Community,
         select: "_id id name image",
-      }) // Populate the community field with _id and name
+      }) 
       .populate({
-        path: "children", // Populate the children field
+        path: "children",
         populate: [
           {
-            path: "author", // Populate the author field within children
-            model: User,
+            path: "author", 
             select: "_id id name parentId image", // Select only _id and username fields of the author
           },
           {

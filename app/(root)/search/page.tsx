@@ -31,7 +31,6 @@ async function Page({
     pageSize: 1,
   });
 
-  console.log('RESULT FROM DB',result);
 
   return (
     <section>
