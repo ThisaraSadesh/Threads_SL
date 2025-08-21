@@ -40,7 +40,6 @@ const ThreadCard = ({
   comments,
   isComment,
 }: Props) => {
-
   return (
     <article
       className={`flex w-full flex-col rounded-xl h-full ${
@@ -56,6 +55,9 @@ const ThreadCard = ({
                 alt="Profile Image"
                 fill
                 className="cursor-pointer rounded-full"
+                priority={false} // ✅ Add this
+                placeholder="blur" // ✅ Add this
+                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD..." // ✅ Add blur placeholder
               />
             </Link>
 
@@ -117,28 +119,25 @@ const ThreadCard = ({
 
         {/*TODO:DeletedThread*/}
         {/*TODO:show comment logos*/}
-
       </div>
-        {!isComment && community && (
-          <Link
-            href={`/communities/${community.id}`}
-            className="mt-5 flex items-center w-full h-[60px] gap-2"
-          >
-            <p className="text-subtle-medium text-gray-1">
-              {formatDateString(createdAt)}-{community.name} Community
-            </p>
+      {!isComment && community && (
+        <Link
+          href={`/communities/${community.id}`}
+          className="mt-5 flex items-center w-full h-[60px] gap-2"
+        >
+          <p className="text-subtle-medium text-gray-1">
+            {formatDateString(createdAt)}-{community.name} Community
+          </p>
 
-            <Image
-            
+          <Image
             src={community.image}
             alt={community.name}
             width={20}
             height={20}
-
             className="w-[20] h-[20] rounded-full"
-            />
-          </Link>
-        )}
+          />
+        </Link>
+      )}
     </article>
   );
 };
