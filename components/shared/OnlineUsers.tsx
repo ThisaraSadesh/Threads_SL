@@ -10,11 +10,18 @@ interface OnlineUsersProps {
 export default function OnlineUsers({ channelName }: OnlineUsersProps) {
   const { onlineUsers, currentUser, isReady } = useUserPresence(channelName);
 
+  console.log("OnlineUsers debug:", {
+    isReady,
+    onlineUsersCount: onlineUsers.length,
+    currentUser: !!currentUser,
+    channelName,
+  });
+
   // Show loading state while Ably is initializing
   if (!isReady) {
     return (
       <div className=" rounded-lg shadow p-4">
-        <h3 className="text-lg font-semibold mb-3">Online Users</h3>
+        <h3 className="text-lg font-semibold mb-3 text-white">Online Users</h3>
         <div className="flex items-center space-x-2">
           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
           <span className="text-gray-500 text-sm">Loading...</span>
@@ -29,8 +36,8 @@ export default function OnlineUsers({ channelName }: OnlineUsersProps) {
   );
 
   return (
-    <div className="rounded-lg shadow p-4 mt-10">
-      <h3 className="text-lg font-semibold mb-3">
+    <div className="rounded-lg shadow p-4 mt-10 text-white">
+      <h3 className="text-lg font-semibold mb-3 ">
         Online Users ({activeUsers.length})
       </h3>
 

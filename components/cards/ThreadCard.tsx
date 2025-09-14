@@ -54,6 +54,7 @@ const ThreadCard = ({
                 src={author.image}
                 alt="Profile Image"
                 fill
+                sizes="(max-width: 768px) 100px, 50px"
                 className="cursor-pointer rounded-full"
                 priority={false} // ✅ Add this
                 placeholder="blur" // ✅ Add this
@@ -105,7 +106,10 @@ const ThreadCard = ({
                   className="cursor-pointer object-contain"
                 />
               </div>
-
+              <p className="text-subtle-medium text-gray-1">
+                {" "}
+                {!community ? formatDateString(createdAt) : null}
+              </p>
               {isComment && comments.length > 0 && (
                 <Link href={`/thread/${id}`}>
                   <p className="mt-1 text-subtle-medium text-gray-1">

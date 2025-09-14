@@ -1,7 +1,10 @@
+
 import { fetchUserPosts } from "@/lib/actions/user.actions";
 import { redirect } from "next/navigation";
 import ThreadCard from "../cards/ThreadCard";
 import { fetchCommunityPosts } from "@/lib/actions/community.actions";
+import { Button } from "../ui/button";
+import { deleteThread } from "@/lib/actions/thread.actions";
 
 interface Props {
   currentUserId: string;
@@ -11,7 +14,7 @@ interface Props {
 
 const ThreadsTab = async ({ currentUserId, accountId, accountType }: Props) => {
   let result: any;
-
+  const path = `/profile/${currentUserId}`;
   if (accountType === "Community") {
     result = await fetchCommunityPosts(accountId);
   } else {
@@ -19,29 +22,43 @@ const ThreadsTab = async ({ currentUserId, accountId, accountType }: Props) => {
   }
 
   if (!result) redirect("/");
+  const handleDelete = async (threadId: string) => {
+    'use server'
+    await deleteThread(threadId, path);
+  };
 
   return (
     <section className="mt-9 flex flex-col gap-10">
       {result.threads.map((thread: any) => (
-        <ThreadCard
+        <div
           key={thread._id}
-          id={thread._id}
-          currentUserId={currentUserId}
-          parentId={thread.parentId}
-          content={thread.text}
-          author={
-            accountType === "User"
-              ? { name: result.name, image: result.image, id: result.id }
-              : {
-                  name: thread.author.name,
-                  image: thread.author.image,
-                  id: thread.author.id,
-                }
-          }
-          community={thread.community}
-          createdAt={thread.createdAt}
-          comments={thread.children}
-        />
+          className="flex items-center gap-4 bg-dark-2 px-5 py-5 rounded-2xl"
+        >
+          <ThreadCard
+            key={thread._id}
+            id={thread._id}
+            currentUserId={currentUserId}
+            parentId={thread.parentId}
+            content={thread.text}
+            author={
+              accountType === "User"
+                ? { name: result.name, image: result.image, id: result.id }
+                : {
+                    name: thread.author.name,
+                    image: thread.author.image,
+                    id: thread.author.id,
+                  }
+            }
+            community={thread.community}
+            createdAt={thread.createdAt}
+            comments={thread.children}
+          />
+          <form action={handleDelete.bind(null, thread._id)}>
+            <Button type="submit" className="bg-primary-500">
+              Delete
+            </Button>
+          </form>
+        </div>
       ))}
     </section>
   );

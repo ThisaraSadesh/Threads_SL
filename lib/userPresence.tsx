@@ -22,8 +22,15 @@ export function useUserPresence(channelName: string) {
 
   // Initialize channel and set up presence
   useEffect(() => {
-    if (!ablyClient || !user) return;
+    if (!ablyClient || !user) {
+      console.log("Ably client or user not available:", {
+        ablyClient: !!ablyClient,
+        user: !!user,
+      });
+      return;
+    }
 
+    console.log("Setting up Ably channel:", channelName);
     const ch = ablyClient.channels.get(channelName);
     setChannel(ch);
 
@@ -32,6 +39,7 @@ export function useUserPresence(channelName: string) {
       ch.presence
         .get()
         .then((members) => {
+          console.log("Presence members updated:", members.length);
           setPresenceMembers(members || []);
         })
         .catch((err) => {
@@ -51,13 +59,13 @@ export function useUserPresence(channelName: string) {
     };
   }, [ablyClient, channelName, user]);
 
-  // Delay to ensure Ably client is ready
+  // Set ready state when Ably client is available
   useEffect(() => {
-    const timer = setTimeout(() => {
+    if (ablyClient && user) {
+      console.log("Setting isReady to true");
       setIsReady(true);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, []);
+    }
+  }, [ablyClient, user]);
 
   // Enter presence when component mounts and user is available
   useEffect(() => {
@@ -102,6 +110,6 @@ export function useUserPresence(channelName: string) {
     onlineUsers,
     currentUser: user,
     updatePresence,
-    isReady: isReady && !!ablyClient,
+    isReady: isReady && !!ablyClient && !!user,
   };
 }
