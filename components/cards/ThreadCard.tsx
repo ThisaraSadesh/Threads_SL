@@ -2,7 +2,6 @@ import Community from "@/lib/models/community.model";
 import { formatDateString } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
-
 interface Props {
   id: string;
   currentUserId: string;
@@ -29,7 +28,7 @@ interface Props {
   isComment?: boolean;
 }
 
-const ThreadCard = ({
+const ThreadCard = async({
   id,
   currentUserId,
   parentId,
@@ -40,6 +39,8 @@ const ThreadCard = ({
   comments,
   isComment,
 }: Props) => {
+
+
   return (
     <article
       className={`flex w-full flex-col rounded-xl h-full ${

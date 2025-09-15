@@ -7,6 +7,7 @@ import { connectToDB } from "../mongoose";
 import User from "../models/user.model";
 import Thread from "../models/thread.model";
 import Community from "../models/community.model";
+import { filterToxicComments } from "./filterThreads";
 
 export async function fetchPosts(pageNumber = 1, pageSize = 20) {
   connectToDB();
@@ -71,6 +72,23 @@ export async function createThread({
       { _id: 1 }
     );
 
+    const result: any = await filterToxicComments(text);
+    console.log('RESULTTT',result);
+    const classes = result?.moderation_classes;
+
+    if (!classes) {
+      throw new Error("Moderation API did not return classes");
+    }
+
+    if (
+      (classes.sexual ?? 0) > 0.1 ||
+      (classes.violent ?? 0) > 0.1 ||
+      (classes.toxic ?? 0) > 0.1
+    ) {
+      return(
+        {message:"Your Thread contains sexual, violent, or toxic content!"}
+      );
+    }
     const createdThread = await Thread.create({
       text,
       author,
@@ -172,17 +190,17 @@ export async function fetchThreadById(threadId: string) {
         path: "author",
         model: User,
         select: "_id id name image",
-      }) 
+      })
       .populate({
         path: "community",
         model: Community,
         select: "_id id name image",
-      }) 
+      })
       .populate({
         path: "children",
         populate: [
           {
-            path: "author", 
+            path: "author",
             select: "_id id name parentId image", // Select only _id and username fields of the author
           },
           {

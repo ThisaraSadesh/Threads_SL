@@ -10,7 +10,7 @@ import Bottombar from "@/components/shared/Bottombar";
 import RightSidebar from "@/components/shared/RightSidebar";
 import Topbar from "@/components/shared/Topbar";
 import AblyClientProvider from "@/app/providers/AblyClientProvider";
-
+import { Toaster } from "sonner";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -39,6 +39,7 @@ export default function RootLayout({
             <main className="flex flex-row">
               <LeftSidebar />
               <section className="main-container">
+                <Toaster />
                 <div className="w-full max-w-4xl">{children}</div>
               </section>
               {/* @ts-ignore */}
