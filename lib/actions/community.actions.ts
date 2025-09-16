@@ -117,7 +117,6 @@ export async function fetchCommunities({
 }) {
   try {
     connectToDB();
-    console.log('REQUEST search',searchString);
     // Calculate the number of communities to skip based on the page number and page size.
     const skipAmount = (pageNumber - 1) * pageSize;
 
