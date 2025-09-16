@@ -15,19 +15,21 @@ const page = async ({ params }: { params: { id: string } }) => {
   if (!userInfo?.onboarded) redirect("/onboarding");
 
   const thread = await fetchThreadById(params.id);
+  const upvotesArrLength=thread.upvotes?.length;
   return (
     <section className="relative">
       <div>
         <ThreadCard
           key={thread._id}
           id={thread._id}
-          currentUserId={user?.id || ""}
+          currentUserId={user?._id || ""}
           parentId={thread.parentId}
           content={thread.text}
           author={thread.author}
           community={thread.community}
           createdAt={thread.createdAt}
           comments={thread.children}
+          upvoteCount={upvotesArrLength}
         />
       </div>
 

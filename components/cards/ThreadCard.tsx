@@ -2,6 +2,11 @@ import Community from "@/lib/models/community.model";
 import { formatDateString } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
+import Upvote from "../Upvote";
+import { upvoteThread } from "@/lib/actions/thread.actions";
+import { Suspense } from "react";
+export const experimental_ppr = true;
+
 interface Props {
   id: string;
   currentUserId: string;
@@ -26,9 +31,10 @@ interface Props {
   }[];
 
   isComment?: boolean;
+  upvoteCount: number;
 }
 
-const ThreadCard = async({
+const ThreadCard = async ({
   id,
   currentUserId,
   parentId,
@@ -38,9 +44,8 @@ const ThreadCard = async({
   createdAt,
   comments,
   isComment,
+  upvoteCount,
 }: Props) => {
-
-
   return (
     <article
       className={`flex w-full flex-col rounded-xl h-full ${
@@ -75,13 +80,14 @@ const ThreadCard = async({
             <p className="mt-2 text-small-regular text-light-2">{content}</p>
             <div className={`${isComment && "mb-10"} mt-5 flex flex-col gap-3`}>
               <div className="flex gap-3.5">
-                <Image
-                  src="/assets/heart-gray.svg"
-                  alt="heart"
-                  width={24}
-                  height={24}
-                  className="cursor-pointer object-contain"
-                />
+                <Suspense fallback={<p>...Loading</p>}>
+                  <Upvote
+                    id={id}
+                    currentUserId={currentUserId}
+                    upvoteCount={upvoteCount}
+                  />
+                </Suspense>
+
                 <Link href={`/thread/${id}`}>
                   <Image
                     src="/assets/reply.svg"

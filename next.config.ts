@@ -1,14 +1,14 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  
-  typescript:{
-    ignoreBuildErrors:true
+  typescript: {
+    ignoreBuildErrors: true,
   },
-   eslint: {
+  eslint: {
     ignoreDuringBuilds: true,
   },
   experimental: {
     serverActions: {},
+    ppr: "incremental",
   },
   transpilePackages: ["mongoose"],
   images: {
@@ -31,7 +31,6 @@ const nextConfig = {
       },
     ],
   },
-
 };
 
 module.exports = nextConfig;

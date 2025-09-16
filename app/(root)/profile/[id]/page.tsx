@@ -10,14 +10,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { fetchUser } from "@/lib/actions/user.actions";
 
-export default async function Page({ params }: { params: { id: string } }) {
+export default async function Page({ params }: { params: Promise<{ id: string }> }) {
   const user = await currentUser();
   if (!user) return null;
 
-  const userInfo = await fetchUser(params.id);
+
+  const prmsId=(await params).id;
+  const userInfo = await fetchUser(prmsId);
 
   if (!userInfo?.onboarded) {
-    console.log("id from params:", params.id);
+    console.log("id from params:", prmsId);
     console.log("onboarded is false, redirecting to /onboarding");
     redirect("/onboarding");
   }

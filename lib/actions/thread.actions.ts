@@ -8,6 +8,9 @@ import User from "../models/user.model";
 import Thread from "../models/thread.model";
 import Community from "../models/community.model";
 import { filterToxicComments } from "./filterThreads";
+import { ObjectId, Document } from "mongoose";
+import mongoose from "mongoose";
+import { Types } from "mongoose";
 
 export async function fetchPosts(pageNumber = 1, pageSize = 20) {
   connectToDB();
@@ -35,7 +38,8 @@ export async function fetchPosts(pageNumber = 1, pageSize = 20) {
         model: User,
         select: "_id name parentId image", // Select only _id and username fields of the author
       },
-    });
+    })
+    .lean();
 
   // Count the total number of top-level posts (threads) i.e., threads that are not comments.
   const totalPostsCount = await Thread.countDocuments({
@@ -43,10 +47,11 @@ export async function fetchPosts(pageNumber = 1, pageSize = 20) {
   }); // Get the total count of posts
 
   const posts = await postsQuery.exec();
+  const serializedPosts = JSON.parse(JSON.stringify(posts));
 
   const isNext = totalPostsCount > skipAmount + posts.length;
 
-  return { posts, isNext };
+  return { posts: serializedPosts, isNext };
 }
 
 interface Params {
@@ -54,6 +59,14 @@ interface Params {
   author: string;
   communityId: string | null;
   path: string;
+}
+interface ThreadType extends Document {
+  text: string;
+  author: ObjectId;
+  community: ObjectId;
+  children: ObjectId[];
+  createdAt: Date;
+  upvotes: string[]; // Use Types.ObjectId
 }
 
 export async function createThread({
@@ -73,7 +86,7 @@ export async function createThread({
     );
 
     const result: any = await filterToxicComments(text);
-    console.log('RESULTTT',result);
+    console.log("RESULTTT", result);
     const classes = result?.moderation_classes;
 
     if (!classes) {
@@ -85,9 +98,9 @@ export async function createThread({
       (classes.violent ?? 0) > 0.1 ||
       (classes.toxic ?? 0) > 0.1
     ) {
-      return(
-        {message:"Your Thread contains sexual, violent, or toxic content!"}
-      );
+      return {
+        message: "Your Thread contains sexual, violent, or toxic content!",
+      };
     }
     const createdThread = await Thread.create({
       text,
@@ -259,5 +272,38 @@ export async function addCommentToThread(
   } catch (err) {
     console.error("Error while adding comment:", err);
     throw new Error("Unable to add comment");
+  }
+}
+export async function upvoteThread(threadId: string, userId: string) {
+  try {
+     connectToDB();
+
+    const thread: ThreadType | null = await Thread.findById(threadId);
+    if (!thread) {
+      return { success: false, message: "Thread not found" };
+    }
+    console.log("userID", userId);
+    // Correct conversion
+   
+    const upvotes = thread.upvotes || [];
+
+    const isUserExists = upvotes.some(
+      (id) => id === userId
+    );
+
+    if (isUserExists) {
+      return { success: false, message: "You can't vote again" };
+    }
+
+    upvotes.push(userId);
+    thread.upvotes = upvotes;
+    await thread.save();
+
+    revalidatePath("/");
+
+    return { success: true, message: "Upvote added successfully" };
+  } catch (error) {
+    console.log(error);
+    return { success: false, message: "Something went wrong" };
   }
 }

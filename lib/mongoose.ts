@@ -9,12 +9,7 @@ export const connectToDB = async () => {
   if (isConnected) return;
 
   try {
-    await mongoose.connect(process.env.MONGODB_URL, {
-      bufferCommands: true, // ✅ Disable mongoose buffering
-      serverSelectionTimeoutMS: 5000, // ✅ Timeout after 5s instead of 30s
-      socketTimeoutMS: 45000, // ✅ Close socket after 45s
-      maxPoolSize: 10, // ✅ Limit connection pool
-    });
+    await mongoose.connect(process.env.MONGODB_URL);
     isConnected = true;
     console.log("Connected to MongoDB");
   } catch (error) {
