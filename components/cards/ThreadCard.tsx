@@ -127,7 +127,7 @@ const ThreadCard = async ({
               alt={originalCommunity.name || "Community"}
               width={20}
               height={20}
-              className="rounded-full"
+              className="rounded-full w-[20px] h-[20px]"
             />
           </Link>
         )}
