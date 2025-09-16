@@ -21,8 +21,8 @@ async function Home(props: {
     <>
       <h1 className="head-text text-left">Home</h1>
 
-      <Suspense fallback={<p><Skeleton/></p>}>
-        <ThreadsList page={page} userId={user.id} />
+      <Suspense fallback={<Skeleton/>}>
+        <ThreadsList page={page} userId={userInfo._id} />
       </Suspense>
     </>
   );

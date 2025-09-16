@@ -3,8 +3,11 @@ import { formatDateString } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
 import Upvote from "../Upvote";
-import { upvoteThread } from "@/lib/actions/thread.actions";
 import { Suspense } from "react";
+import Repost from "../Repost";
+import { ObjectId } from "mongoose";
+import { ProfileImage } from "../shared/ProfileImage";
+
 export const experimental_ppr = true;
 
 interface Props {
@@ -32,6 +35,18 @@ interface Props {
 
   isComment?: boolean;
   upvoteCount: number;
+  isShared?: boolean;
+  SharedBy?: {
+    name: string;
+    image: string;
+    id: string;
+  };
+  userIdfromDB?: ObjectId;
+  originalCommunity?: {
+    id: string;
+    name: string;
+    image: string;
+  };
 }
 
 const ThreadCard = async ({
@@ -45,111 +60,99 @@ const ThreadCard = async ({
   comments,
   isComment,
   upvoteCount,
+  isShared,
+  SharedBy,
+  userIdfromDB,
+  originalCommunity,
 }: Props) => {
   return (
-    <article
-      className={`flex w-full flex-col rounded-xl h-full ${
-        isComment ? "px-0 xs:px-7" : "bg-dark-2 p-7"
-      }`}
-    >
-      <div className="flex items-start justify-between">
-        <div className="flex w-full flex-1 flex-row gap-4">
-          <div className="flex flex-col items-center">
-            <Link href={`/profile/${author.id}`} className="relative h-11 w-11">
-              <Image
-                src={author.image}
-                alt="Profile Image"
-                fill
-                sizes="(max-width: 768px) 100px, 50px"
-                className="cursor-pointer rounded-full"
-                priority={false} // ✅ Add this
-                placeholder="blur" // ✅ Add this
-                blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD..." // ✅ Add blur placeholder
-              />
-            </Link>
+<article
+  className={`flex w-full flex-col rounded-xl h-full ${
+    isComment ? "px-0 xs:px-7" : "bg-dark-2 p-7"
+  }`}
+>
+  <div className="flex gap-3 w-full">
+    <ProfileImage user={author} showBar />
 
-            <div className="thread-card_bar" />
-          </div>
-
-          <div className="flex w-full flex-col">
-            <Link href={`/profile/${author.id}`} className="w-fit">
-              <h4 className="cursor-pointer text-base-semibold text-light-1">
-                {author.name}
-              </h4>
-            </Link>
-            <p className="mt-2 text-small-regular text-light-2">{content}</p>
-            <div className={`${isComment && "mb-10"} mt-5 flex flex-col gap-3`}>
-              <div className="flex gap-3.5">
-                <Suspense fallback={<p>...Loading</p>}>
-                  <Upvote
-                    id={id}
-                    currentUserId={currentUserId}
-                    upvoteCount={upvoteCount}
-                  />
-                </Suspense>
-
-                <Link href={`/thread/${id}`}>
-                  <Image
-                    src="/assets/reply.svg"
-                    alt="reply"
-                    width={24}
-                    height={24}
-                    className="cursor-pointer object-contain"
-                  />
-                </Link>
-
-                <Image
-                  src="/assets/repost.svg"
-                  alt="repost"
-                  width={24}
-                  height={24}
-                  className="cursor-pointer object-contain"
-                />
-                <Image
-                  src="/assets/share.svg"
-                  alt="share"
-                  width={24}
-                  height={24}
-                  className="cursor-pointer object-contain"
-                />
-              </div>
-              <p className="text-subtle-medium text-gray-1">
-                {" "}
-                {!community ? formatDateString(createdAt) : null}
-              </p>
-              {isComment && comments.length > 0 && (
-                <Link href={`/thread/${id}`}>
-                  <p className="mt-1 text-subtle-medium text-gray-1">
-                    {comments.length} replies
-                  </p>
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/*TODO:DeletedThread*/}
-        {/*TODO:show comment logos*/}
-      </div>
-      {!isComment && community && (
-        <Link
-          href={`/communities/${community.id}`}
-          className="mt-5 flex items-center w-full h-[60px] gap-2"
-        >
-          <p className="text-subtle-medium text-gray-1">
-            {formatDateString(createdAt)}-{community.name} Community
-          </p>
-
-          <Image
-            src={community.image}
-            alt={community.name}
-            width={20}
-            height={20}
-            className="w-[20] h-[20] rounded-full"
-          />
-        </Link>
+    <div className="flex-1">
+      {isShared && (
+        <p className="text-white text-left font-sans mb-2">
+          {author.name} reposted
+        </p>
       )}
-    </article>
+
+      <div className={`flex flex-col gap-3 ${isShared ? "bg-gray-950 p-3 rounded-lg" : ""}`}>
+        {/* Header: SharedBy or author */}
+        {isShared ? (
+          <div className="flex items-center gap-3">
+            <ProfileImage user={SharedBy} size="h-11 w-11" />
+            <h1 className="cursor-pointer text-base-semibold text-light-1">
+              {SharedBy?.name}
+            </h1>
+          </div>
+        ) : (
+          <h1 className="cursor-pointer text-base-semibold text-light-1">
+            {author.name}
+          </h1>
+        )}
+
+        <p className="text-small-regular text-light-2">{content}</p>
+
+        {!isShared && (
+          <div className="flex gap-3.5 mt-3">
+            <Suspense fallback={<p>...Loading</p>}>
+              <Upvote id={id.toString()} currentUserId={currentUserId} upvoteCount={upvoteCount} />
+            </Suspense>
+
+            <Link href={`/thread/${id}`} className="flex items-center gap-1">
+              <Image src="/assets/reply.svg" alt="reply" width={24} height={24} className="cursor-pointer object-contain" />
+              <p className="text-white text-md font-extralight">{comments.length}</p>
+            </Link>
+
+            <Repost id={id} currentUserId={currentUserId} />
+            <Image src="/assets/share.svg" alt="share" width={24} height={24} className="cursor-pointer object-contain" />
+          </div>
+        )}
+
+        {(isShared || !community) && originalCommunity && (
+          <Link
+            href={`/communities/${originalCommunity.id}`}
+            className="flex items-center w-full gap-2 mt-2"
+          >
+            <p className="text-subtle-medium text-gray-1">
+              {formatDateString(createdAt)} - {originalCommunity.name || "No Organization"} Community
+            </p>
+            <Image
+              src={originalCommunity.image || "/default-community.png"}
+              alt={originalCommunity.name || "Community"}
+              width={20}
+              height={20}
+              className="rounded-full"
+            />
+          </Link>
+        )}
+
+        {isComment && comments.length > 0 && (
+          <Link href={`/thread/${id}`}>
+            <p className="mt-1 text-subtle-medium text-gray-1">{comments.length} replies</p>
+          </Link>
+        )}
+      </div>
+    </div>
+  </div>
+
+  {!isComment && community && (
+    <Link href={`/communities/${community.id}`} className="mt-5 flex items-center w-full h-[60px] gap-2">
+      <p className="text-subtle-medium text-gray-1">
+        {formatDateString(createdAt)} - {community.name} Community
+      </p>
+      <Image src={community.image} alt={community.name} width={20} height={20} className="rounded-full" />
+    </Link>
+  )}
+</article>
+
+
+
   );
 };
 

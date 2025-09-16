@@ -2,24 +2,26 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { upvoteThread } from "@/lib/actions/thread.actions";
+import { repostThread } from "@/lib/actions/thread.actions";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { useOrganization } from "@clerk/nextjs";
 
-interface UpvoteProps {
+interface RepostProps {
   id: string;
   currentUserId: string;
-  upvoteCount: number;
+  //   upvoteCount: number;
 }
 
-const Upvote = ({ upvoteCount: initialCount, currentUserId, id }: UpvoteProps) => {
-  const [upvoteCount, setUpvoteCount] = useState(initialCount);
+const Repost = ({ currentUserId, id }: RepostProps) => {
+  const { organization } = useOrganization();
+  //   const [upvoteCount, setUpvoteCount] = useState(initialCount);
 
-  const handleUpvote = async () => {
-    const result = await upvoteThread(id, currentUserId);
+  const handleRespost = async () => {
+    const result = await repostThread(id, currentUserId, organization?.id);
     if (result.success) {
       // Update local state to trigger animation
-      setUpvoteCount((prev) => prev + 1);
+      //   setUpvoteCount((prev) => prev + 1);
       toast.success(result.message);
     } else {
       toast.error(result.message);
@@ -30,16 +32,16 @@ const Upvote = ({ upvoteCount: initialCount, currentUserId, id }: UpvoteProps) =
     <div>
       <div
         className="flex items-center justify-center gap-1"
-        onClick={handleUpvote}
+        onClick={handleRespost}
       >
         <Image
-          src={upvoteCount > 0 ? "/assets/heart-filled.svg" : "/assets/heart-gray.svg"}
+          src={"/assets/repost.svg"}
           alt="heart"
           width={24}
           height={24}
           className="cursor-pointer object-contain"
         />
-        <AnimatePresence mode="popLayout">
+        {/* <AnimatePresence mode="popLayout">
           <motion.div
             key={upvoteCount} 
             initial={{ y: 20, opacity: 0 }}
@@ -50,10 +52,10 @@ const Upvote = ({ upvoteCount: initialCount, currentUserId, id }: UpvoteProps) =
           >
             {upvoteCount>=1000?(upvoteCount/1000).toFixed(1)+'K':upvoteCount}
           </motion.div>
-        </AnimatePresence>
+        </AnimatePresence> */}
       </div>
     </div>
   );
 };
 
-export default Upvote;
+export default Repost;

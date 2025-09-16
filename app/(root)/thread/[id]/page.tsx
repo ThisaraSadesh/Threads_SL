@@ -4,8 +4,12 @@ import { fetchThreadById } from "@/lib/actions/thread.actions";
 import { fetchUser } from "@/lib/actions/user.actions";
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-const page = async ({ params }: { params: { id: string } }) => {
-  if (!params.id) return null;
+const page = async ({ params }: { params: Promise<{ id: string }> }) => {
+  
+  const paramsId=(await params).id;
+  if (!paramsId) return null;
+
+
   const user = await currentUser();
   if (!user) {
     return null;
@@ -14,7 +18,10 @@ const page = async ({ params }: { params: { id: string } }) => {
 
   if (!userInfo?.onboarded) redirect("/onboarding");
 
-  const thread = await fetchThreadById(params.id);
+  const thread = await fetchThreadById(paramsId);
+  if(!thread){
+    console.error('Thread Not Found');
+  }
   const upvotesArrLength=thread.upvotes?.length;
   return (
     <section className="relative">
@@ -53,6 +60,7 @@ const page = async ({ params }: { params: { id: string } }) => {
             createdAt={child.createdAt}
             comments={child.children}
             isComment={true}
+            upvoteCount={upvotesArrLength}
           />
         ))}
       </div>

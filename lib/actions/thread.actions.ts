@@ -28,7 +28,16 @@ export async function fetchPosts(pageNumber = 1, pageSize = 20) {
       model: User,
     })
     .populate({
+      path: "sharedFrom",
+      model: User,
+      select: "_id id name image",
+    })
+    .populate({
       path: "community",
+      model: Community,
+    })
+    .populate({
+      path: "originalCommunity",
       model: Community,
     })
     .populate({
@@ -205,6 +214,11 @@ export async function fetchThreadById(threadId: string) {
         select: "_id id name image",
       })
       .populate({
+        path: "sharedFrom",
+        model: User,
+        select: "_id id name image",
+      })
+      .populate({
         path: "community",
         model: Community,
         select: "_id id name image",
@@ -276,7 +290,7 @@ export async function addCommentToThread(
 }
 export async function upvoteThread(threadId: string, userId: string) {
   try {
-     connectToDB();
+    connectToDB();
 
     const thread: ThreadType | null = await Thread.findById(threadId);
     if (!thread) {
@@ -284,12 +298,10 @@ export async function upvoteThread(threadId: string, userId: string) {
     }
     console.log("userID", userId);
     // Correct conversion
-   
+
     const upvotes = thread.upvotes || [];
 
-    const isUserExists = upvotes.some(
-      (id) => id === userId
-    );
+    const isUserExists = upvotes.some((id) => id === userId);
 
     // if (isUserExists) {
     //   return { success: false, message: "You can't vote again" };
@@ -307,3 +319,55 @@ export async function upvoteThread(threadId: string, userId: string) {
     return { success: false, message: "Something went wrong" };
   }
 }
+
+export const repostThread = async (
+  threadId: string,
+  userId: string,
+  communityId?: string
+) => {
+  await connectToDB();
+  console.log("COMMUNITY ID GOT", communityId);
+  // 1. Find original thread
+  const originalThread = await Thread.findById(threadId);
+  if (!originalThread) throw new Error("Thread not found");
+
+  // 2. Find current user with communities
+  const currentUser = await User.findById(userId).populate("communities");
+  if (!currentUser) throw new Error("User not found");
+
+  const community = await Community.findOne({ id: communityId });
+  let communityID;
+  if (community) {
+    communityID = community._id;
+  }
+
+  // 3. Decide which community to use
+  let targetCommunity = null;
+  if (communityID) {
+    targetCommunity = communityID;
+  } else {
+    targetCommunity = null;
+  }
+
+  // 4. Create new thread
+  const newThread = new Thread({
+    text: originalThread.text,
+    author: userId,
+    community: targetCommunity, // ✅ Current user's community
+    parentId: originalThread.parentId || null,
+    isShared: true,
+    sharedFrom: originalThread.author,
+    originalCommunity: originalThread.community,
+  });
+
+  // 5. Save new thread
+  const savedThread = await newThread.save();
+
+  // 6. Add thread to user's threads array
+  await User.findByIdAndUpdate(userId, { $push: { threads: savedThread._id } });
+
+  // 7. Revalidate the path
+  revalidatePath("/");
+
+  return savedThread;
+};
