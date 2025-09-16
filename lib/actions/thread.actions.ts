@@ -291,9 +291,9 @@ export async function upvoteThread(threadId: string, userId: string) {
       (id) => id === userId
     );
 
-    if (isUserExists) {
-      return { success: false, message: "You can't vote again" };
-    }
+    // if (isUserExists) {
+    //   return { success: false, message: "You can't vote again" };
+    // }
 
     upvotes.push(userId);
     thread.upvotes = upvotes;
