@@ -27,11 +27,13 @@ export async function fetchPosts(pageNumber = 1, pageSize = 20) {
       path: "author",
       model: User,
     })
-    .populate({
-      path: "sharedFrom",
-      model: User,
-      select: "_id id name image",
-    })
+    .populate([
+      {
+        path: "sharedBy",
+        model: User,
+        select: "_id id name image",
+      },
+    ])
     .populate({
       path: "community",
       model: Community,
@@ -40,6 +42,17 @@ export async function fetchPosts(pageNumber = 1, pageSize = 20) {
       path: "originalCommunity",
       model: Community,
     })
+    .populate({
+      path: "originalPost",
+      model: "Thread",
+      select: "_id id createdAt author",
+      populate: {
+        path: "author",
+        model: "User",
+        select: "_id id name image", // fields of the original post's author
+      },
+    })
+
     .populate({
       path: "children", // Populate the children field
       populate: {
@@ -326,47 +339,48 @@ export const repostThread = async (
   communityId?: string
 ) => {
   await connectToDB();
-  console.log("COMMUNITY ID GOT", communityId);
-  // 1. Find original thread
-  const originalThread = await Thread.findById(threadId);
-  if (!originalThread) throw new Error("Thread not found");
 
-  // 2. Find current user with communities
+  // 1. Find the thread being reshared
+  const threadToShare = await Thread.findById(threadId).populate(
+    "originalPost"
+  );
+  if (!threadToShare) throw new Error("Thread not found");
+
+  // 2. Get original post: if it's already a share, use its original; else use itself
+  const originalPostId = threadToShare.isShared
+    ? threadToShare.originalPost || threadToShare._id
+    : threadToShare._id;
+
+  // 3. Find user & community
   const currentUser = await User.findById(userId).populate("communities");
   if (!currentUser) throw new Error("User not found");
 
-  const community = await Community.findOne({ id: communityId });
-  let communityID;
-  if (community) {
-    communityID = community._id;
-  }
+  const community = communityId
+    ? await Community.findOne({ id: communityId })
+    : null;
 
-  // 3. Decide which community to use
-  let targetCommunity = null;
-  if (communityID) {
-    targetCommunity = communityID;
-  } else {
-    targetCommunity = null;
-  }
-
-  // 4. Create new thread
+  // 4. Create new thread for the repost
   const newThread = new Thread({
-    text: originalThread.text,
+    text: threadToShare.text, // original content stays the same
     author: userId,
-    community: targetCommunity, // ✅ Current user's community
-    parentId: originalThread.parentId || null,
+    community: community ? community._id : null,
+    parentId: null, // reposts don't have a parent comment by default
     isShared: true,
-    sharedFrom: originalThread.author,
-    originalCommunity: originalThread.community,
+    originalPost: originalPostId, // Always point to the original root post
+    sharedBy: threadToShare.isShared
+      ? [...(threadToShare.sharedBy || []), userId] // If resharing a share, extend chain
+      : [userId], // First share creates array
+    originalCommunity:
+      threadToShare.originalCommunity || threadToShare.community,
   });
 
-  // 5. Save new thread
+  // 5. Save new repost
   const savedThread = await newThread.save();
 
-  // 6. Add thread to user's threads array
+  // 6. Add to user’s threads list
   await User.findByIdAndUpdate(userId, { $push: { threads: savedThread._id } });
 
-  // 7. Revalidate the path
+  // 7. Revalidate feed
   revalidatePath("/");
 
   return savedThread;

@@ -29,8 +29,9 @@ async function ThreadsList({ page, userId }: { page: number; userId: string }) {
                 comments={post.children}
                 upvoteCount={upvotesArrLength}
                 isShared={post.isShared}
-                SharedBy={post.sharedFrom}
+                SharedBy={post.sharedBy}
                 originalCommunity={post.originalCommunity}
+                originalPost={post.originalPost}
               
               />
             );
