@@ -55,7 +55,7 @@ function CommunityCard({ id, name, username, imgUrl, bio, members }: Props) {
                 height={28}
                 className={`${
                   index !== 0 && "-ml-2"
-                } rounded-full object-cover`}
+                } rounded-full object-cover w-[28px] h-[28px]`}
               />
             ))}
             {members.length > 3 && (
