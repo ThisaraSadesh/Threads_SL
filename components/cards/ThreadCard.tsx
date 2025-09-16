@@ -81,7 +81,11 @@ const ThreadCard = async ({
         </p>
       )}
 
-      <div className={`flex flex-col gap-3 ${isShared ? "bg-gray-950 p-3 rounded-lg" : ""}`}>
+      <div
+        className={`flex flex-col gap-3 ${
+          isShared ? "bg-gray-950 p-3 rounded-lg" : ""
+        }`}
+      >
         {/* Header: SharedBy or author */}
         {isShared ? (
           <div className="flex items-center gap-3">
@@ -98,29 +102,14 @@ const ThreadCard = async ({
 
         <p className="text-small-regular text-light-2">{content}</p>
 
-        {!isShared && (
-          <div className="flex gap-3.5 mt-3">
-            <Suspense fallback={<p>...Loading</p>}>
-              <Upvote id={id.toString()} currentUserId={currentUserId} upvoteCount={upvoteCount} />
-            </Suspense>
-
-            <Link href={`/thread/${id}`} className="flex items-center gap-1">
-              <Image src="/assets/reply.svg" alt="reply" width={24} height={24} className="cursor-pointer object-contain" />
-              <p className="text-white text-md font-extralight">{comments.length}</p>
-            </Link>
-
-            <Repost id={id} currentUserId={currentUserId} />
-            <Image src="/assets/share.svg" alt="share" width={24} height={24} className="cursor-pointer object-contain" />
-          </div>
-        )}
-
         {(isShared || !community) && originalCommunity && (
           <Link
             href={`/communities/${originalCommunity.id}`}
             className="flex items-center w-full gap-2 mt-2"
           >
             <p className="text-subtle-medium text-gray-1">
-              {formatDateString(createdAt)} - {originalCommunity.name || "No Organization"} Community
+              {formatDateString(createdAt)} -{" "}
+              {originalCommunity.name || "No Organization"} Community
             </p>
             <Image
               src={originalCommunity.image || "/default-community.png"}
@@ -134,23 +123,72 @@ const ThreadCard = async ({
 
         {isComment && comments.length > 0 && (
           <Link href={`/thread/${id}`}>
-            <p className="mt-1 text-subtle-medium text-gray-1">{comments.length} replies</p>
+            <p className="mt-1 text-subtle-medium text-gray-1">
+              {comments.length} replies
+            </p>
           </Link>
         )}
+      </div>
+
+      {/* Action buttons appear OUTSIDE the shared post */}
+      <div className="flex gap-3.5 mt-3">
+        <Suspense fallback={<p>...Loading</p>}>
+          <Upvote
+            id={id.toString()}
+            currentUserId={currentUserId}
+            upvoteCount={upvoteCount}
+          />
+        </Suspense>
+
+        <Link
+          href={`/thread/${id}`}
+          className="flex items-center gap-1"
+        >
+          <Image
+            src="/assets/reply.svg"
+            alt="reply"
+            width={24}
+            height={24}
+            className="cursor-pointer object-contain"
+          />
+          <p className="text-white text-md font-extralight">
+            {comments.length}
+          </p>
+        </Link>
+
+        <Repost id={id} currentUserId={currentUserId} />
+        <Image
+          src="/assets/share.svg"
+          alt="share"
+          width={24}
+          height={24}
+          className="cursor-pointer object-contain"
+        />
       </div>
     </div>
   </div>
 
-  {!isComment && community && (
-    <Link href={`/communities/${community.id}`} className="mt-5 flex items-center w-full h-[60px] gap-2">
+  {!isComment && (
+    <Link
+      href={`/communities/${community?.id}`}
+      className="mt-5 flex items-center w-full h-[60px] gap-2"
+    >
       <p className="text-subtle-medium text-gray-1">
-        {formatDateString(createdAt)} - {community.name} Community
+        {formatDateString(createdAt)} -{" "}
+        {community?.name ? community.name : "No"} Community
       </p>
-      <Image src={community.image} alt={community.name} width={20} height={20} className="rounded-full" />
+      {community && (
+        <Image
+          src={community?.image}
+          alt={community?.name}
+          width={20}
+          height={20}
+          className="rounded-full"
+        />
+      )}
     </Link>
   )}
 </article>
-
 
 
   );
