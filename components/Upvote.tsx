@@ -12,16 +12,22 @@ interface UpvoteProps {
   upvoteCount: number;
 }
 
-const Upvote = ({ upvoteCount: initialCount, currentUserId, id }: UpvoteProps) => {
+const Upvote = ({
+  upvoteCount: initialCount,
+  currentUserId,
+  id,
+}: UpvoteProps) => {
   const [upvoteCount, setUpvoteCount] = useState(initialCount);
 
   const handleUpvote = async () => {
+    setUpvoteCount((prev) => prev + 1);
+
     const result = await upvoteThread(id, currentUserId);
     if (result.success) {
-      // Update local state to trigger animation
-      setUpvoteCount((prev) => prev + 1);
       toast.success(result.message);
     } else {
+      setUpvoteCount((prev) => prev - 1);
+
       toast.error(result.message);
     }
   };
@@ -33,7 +39,11 @@ const Upvote = ({ upvoteCount: initialCount, currentUserId, id }: UpvoteProps) =
         onClick={handleUpvote}
       >
         <Image
-          src={upvoteCount > 0 ? "/assets/heart-filled.svg" : "/assets/heart-gray.svg"}
+          src={
+            upvoteCount > 0
+              ? "/assets/heart-filled.svg"
+              : "/assets/heart-gray.svg"
+          }
           alt="heart"
           width={24}
           height={24}
@@ -41,14 +51,16 @@ const Upvote = ({ upvoteCount: initialCount, currentUserId, id }: UpvoteProps) =
         />
         <AnimatePresence mode="popLayout">
           <motion.div
-            key={upvoteCount} 
+            key={upvoteCount}
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -20, opacity: 0 }}
             transition={{ duration: 0.3 }}
             className="text-md font-extralight text-white"
           >
-            {upvoteCount>=1000?(upvoteCount/1000).toFixed(1)+'K':upvoteCount}
+            {upvoteCount >= 1000
+              ? (upvoteCount / 1000).toFixed(1) + "K"
+              : upvoteCount}
           </motion.div>
         </AnimatePresence>
       </div>
