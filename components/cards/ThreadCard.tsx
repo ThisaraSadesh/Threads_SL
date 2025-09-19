@@ -1,5 +1,6 @@
+// components/cards/ThreadCard.tsx
 "use client";
-import Community from "@/lib/models/community.model";
+
 import { formatDateString } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
@@ -9,7 +10,28 @@ import Repost from "../Repost";
 import { ObjectId } from "mongoose";
 import { ProfileImage } from "../shared/ProfileImage";
 import PostThread from "../../components/forms/PostThread";
-export const experimental_ppr = true;
+
+// ⚠️ Remove this unless you’re actually using PPR — it’s experimental and can cause issues
+// export const experimental_ppr = true;
+
+// ✅ Define clear, reusable types
+interface Author {
+  name: string;
+  image: string;
+  id: string;
+}
+
+interface Community {
+  id: string;
+  name: string;
+  image: string;
+}
+
+interface OriginalPost {
+  id: string;
+  createdAt: string | Date;
+  author: Author;
+}
 
 interface Props {
   id: string;
@@ -17,50 +39,17 @@ interface Props {
   parentId: string;
   content: string;
   images: string[];
-  author: {
-    name: string;
-    image: string;
-    id: string;
-  };
-  community: {
-    id: string;
-    name: string;
-    image: string;
-  } | null;
-
-  createdAt: string;
-  comments: {
-    author: {
-      image: string;
-    };
-  }[];
-
+  author: Author;
+  community: Community | null;
+  createdAt: string; // ISO string expected
+  comments: Array<{ author: { image: string } }>;
   isComment?: boolean;
   upvoteCount: number;
   isShared?: boolean;
-  SharedBy?: [
-    {
-      name: string;
-      image: string;
-      id: string;
-    }
-  ];
+  SharedBy?: Author[]; // Fixed: was tuple type `[{}]`, should be array
   userIdfromDB?: ObjectId;
-  originalCommunity?: {
-    id: string;
-    name: string;
-    image: string;
-  };
-  originalPost?: {
-    id: string;
-    createdAt: Date;
-    author: {
-      _id: string;
-      id: string;
-      name: string;
-      image?: string;
-    };
-  };
+  originalCommunity?: Community;
+  originalPost?: OriginalPost;
 }
 
 const ThreadCard = ({
@@ -68,14 +57,14 @@ const ThreadCard = ({
   currentUserId,
   parentId,
   content,
-  images,
+  images = [],
   author,
   community,
   createdAt,
-  comments,
-  isComment,
-  upvoteCount,
-  isShared,
+  comments = [],
+  isComment = false,
+  upvoteCount = 0,
+  isShared = false,
   SharedBy,
   userIdfromDB,
   originalCommunity,
@@ -83,16 +72,38 @@ const ThreadCard = ({
 }: Props) => {
   const [isEditing, setIsEditing] = useState(false);
 
+  // 💡 Helper to safely get display date
+  const getDisplayDate = () => {
+    if (isShared && originalPost?.createdAt) {
+      return formatDateString(originalPost.createdAt);
+    }
+    return formatDateString(createdAt);
+  };
+
+  // 💡 Helper to safely get display community
+  const getDisplayCommunity = () => {
+    if (isShared && originalCommunity) return originalCommunity;
+    return community;
+  };
+
+  // 💡 Helper to safely get display author (for header)
+  const getDisplayAuthor = () => {
+    if (isShared && originalPost?.author) return originalPost.author;
+    return author;
+  };
+
   return !isEditing ? (
     <article
-      className={`flex w-full flex-col rounded-xl h-full ${
+      className={`flex w-full flex-col rounded-xl ${
         isComment ? "px-0 xs:px-7" : "bg-dark-2 p-7"
       }`}
     >
       <div className="flex gap-3 w-full">
-        <ProfileImage user={author} showBar />
+        {/* Show original author avatar only if not shared */}
+        {!isShared && <ProfileImage user={author} showBar />}
 
         <div className="flex-1">
+          {/* Shared Header */}
           {isShared && (
             <p className="text-white text-left font-sans mb-2">
               {author.name} reposted
@@ -104,34 +115,40 @@ const ThreadCard = ({
               isShared ? "bg-gray-950 p-3 rounded-lg" : ""
             }`}
           >
-            {/* Header: Original author for shared, else author */}
+            {/* Author/Header Section */}
             {isShared ? (
               <div className="flex items-center gap-3">
                 <ProfileImage user={originalPost?.author} size="h-11 w-11" />
-                <h1 className="cursor-pointer text-base-semibold text-light-1">
-                  {originalPost?.author.name}
-                </h1>
+                <h4 className="cursor-pointer text-base-semibold text-light-1">
+                  {originalPost?.author.name || "Unknown User"}
+                </h4>
               </div>
             ) : (
               <div className="flex justify-between items-center w-full">
-                <div className="font-semibold text-sm text-white">
-                  {author.name}
-                </div>
-
-                <button
-                  onClick={() => setIsEditing(!isEditing)}
-                  className="text-gray-400 hover:text-gray-700"
-                >
-                  ✏️
-                </button>
+                <h4 className="font-semibold text-sm text-white">
+                  {author.name || "Unknown User"}
+                </h4>
+                {currentUserId === author.id && (
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="text-gray-400 hover:text-white transition"
+                    aria-label="Edit post"
+                  >
+                    ✏️
+                  </button>
+                )}
               </div>
             )}
 
-            <p className="text-small-regular text-light-2">{content}</p>
-            <div className="flex gap-3 items-center justify-start w-full">
-              {images &&
-                images.length > 0 &&
-                images.slice(0, 3).map((img, index) => (
+            {/* Content */}
+            <p className="text-small-regular text-light-2 break-words">
+              {content || "No content"}
+            </p>
+
+            {/* Images */}
+            {images.length > 0 && (
+              <div className="flex gap-3 items-start justify-start flex-wrap">
+                {images.slice(0, 3).map((img, index) => (
                   <div
                     key={index}
                     className="relative flex-shrink-0"
@@ -139,104 +156,105 @@ const ThreadCard = ({
                   >
                     <Image
                       src={img}
-                      alt="contentImage"
+                      alt={`content image ${index + 1}`}
                       fill
-                      className="object-cover rounded"
+                      sizes="(max-width: 768px) 100vw, 250px"
+                      className="object-cover rounded-lg"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "/default-image.png";
+                      }}
                     />
-                    {/* Overlay for the last image if there are more than 3 */}
                     {index === 2 && images.length > 3 && (
-                      <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white text-3xl font-bold rounded">
+                      <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white text-2xl font-bold rounded-lg">
                         +{images.length - 3}
                       </div>
                     )}
                   </div>
                 ))}
-            </div>
+              </div>
+            )}
 
-            {/* Flex row: createdAt + community */}
-            <div className="flex items-center gap-4 mt-1 text-subtle-medium text-gray-1 text-sm">
-              <span>
-                {formatDateString(
-                  isShared ? originalPost?.createdAt : createdAt
-                )}
-              </span>
+            {/* Date + Community */}
+            <div className="flex items-center gap-4 mt-1 text-subtle-medium text-gray-1 text-xs sm:text-sm flex-wrap">
+              <span>{getDisplayDate()}</span>
 
-              {(isShared ? originalCommunity : community) && (
+              {getDisplayCommunity() && (
                 <Link
-                  href={`/communities/${
-                    isShared ? originalCommunity?.id : community?.id
-                  }`}
-                  className="flex items-center gap-2"
+                  href={`/communities/${getDisplayCommunity()?.id}`}
+                  className="flex items-center gap-1.5 group"
                 >
-                  <span>
-                    {(isShared ? originalCommunity?.name : community?.name) ||
-                      "No Community"}
+                  <span className="group-hover:underline">
+                    {getDisplayCommunity()?.name || "No Community"}
                   </span>
                   <Image
-                    src={
-                      (isShared
-                        ? originalCommunity?.image
-                        : community?.image) || "/default-community.png"
-                    }
-                    alt={
-                      (isShared ? originalCommunity?.name : community?.name) ||
-                      "Community"
-                    }
-                    width={20}
-                    height={20}
-                    className="rounded-full w-[20px] h-[20px]"
+                    src={getDisplayCommunity()?.image || "/default-community.png"}
+                    alt={getDisplayCommunity()?.name || "Community"}
+                    width={18}
+                    height={18}
+                    className="rounded-full"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "/default-community.png";
+                    }}
                   />
                 </Link>
               )}
             </div>
           </div>
 
+          {/* Replies Count (only for comments) */}
           {isComment && comments.length > 0 && (
-            <Link href={`/thread/${id}`}>
-              <p className="mt-1 text-subtle-medium text-gray-1">
-                {comments.length} replies
+            <Link href={`/thread/${id}`} className="mt-1 block">
+              <p className="text-subtle-medium text-gray-1 text-xs">
+                {comments.length} repl{comments.length === 1 ? "y" : "ies"}
               </p>
             </Link>
           )}
 
-          {/* Action buttons and shared date outside the post */}
-          <div className="flex flex-col mt-3">
-            <div className="flex gap-3.5">
-              <Suspense fallback={<p>...Loading</p>}>
+          {/* Actions */}
+          <div className="flex flex-col mt-4">
+            <div className="flex gap-3.5 items-center">
+              <Suspense fallback={<div className="w-8 h-8 bg-gray-700 rounded animate-pulse" />}>
                 <Upvote
-                  id={id.toString()}
+                  id={id}
                   currentUserId={currentUserId}
                   upvoteCount={upvoteCount}
                 />
               </Suspense>
 
-              <Link href={`/thread/${id}`} className="flex items-center gap-1">
+              <Link href={`/thread/${id}`} className="flex items-center gap-1 group">
                 <Image
                   src="/assets/reply.svg"
                   alt="reply"
-                  width={24}
-                  height={24}
-                  className="cursor-pointer object-contain"
+                  width={20}
+                  height={20}
+                  className="cursor-pointer object-contain group-hover:opacity-80 transition"
                 />
-                <p className="text-white text-md font-extralight">
+                <span className="text-white text-xs font-light group-hover:underline">
                   {comments.length}
-                </p>
+                </span>
               </Link>
 
               <Repost id={id} currentUserId={currentUserId} />
-              <Image
-                src="/assets/share.svg"
-                alt="share"
-                width={24}
-                height={24}
-                className="cursor-pointer object-contain"
-              />
+
+              <button
+                className="flex items-center gap-1 text-white/70 hover:text-white transition text-xs"
+                aria-label="Share post"
+              >
+                <Image
+                  src="/assets/share.svg"
+                  alt="share"
+                  width={20}
+                  height={20}
+                  className="cursor-pointer object-contain"
+                />
+                Share
+              </button>
             </div>
 
-            {/* Shared date for shared posts */}
+            {/* Shared Date (if shared and not a comment) */}
             {isShared && !isComment && (
-              <p className="mt-2 text-subtle-medium text-gray-1 text-sm">
-                {formatDateString(createdAt)}
+              <p className="mt-2 text-subtle-medium text-gray-1 text-xs">
+                Shared on {formatDateString(createdAt)}
               </p>
             )}
           </div>
@@ -244,12 +262,28 @@ const ThreadCard = ({
       </div>
     </article>
   ) : (
-    <div>
-      <h1 className="text-white">Edited Mode Enabled</h1>
-      
-      <PostThread userId={userIdfromDB?.toString()} data={{ title: content, images: images, threadId:id }} setIsEditing={setIsEditing}  isEditing={true}
- />
+    <div className="bg-dark-3 p-5 rounded-xl my-4">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-white font-semibold">Editing Thread</h2>
+        <button
+          onClick={() => setIsEditing(false)}
+          className="text-red-400 hover:text-red-300 text-sm"
+        >
+          Cancel
+        </button>
+      </div>
+      <PostThread
+        userId={userIdfromDB?.toString()}
+        data={{
+          title: content,
+          images: images,
+          threadId: id,
+        }}
+        setIsEditing={setIsEditing}
+        isEditing={true}
+      />
     </div>
   );
 };
+
 export default ThreadCard;

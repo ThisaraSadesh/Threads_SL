@@ -236,11 +236,11 @@ export async function fetchThreadById(threadId: string) {
         model: User,
         select: "_id id name image",
       })
-      .populate([{
+      .populate({
         path: "sharedBy",
         model: User,
         select: "_id id name image",
-      }])
+      })
       .populate({
         path: "community",
         model: Community,
@@ -251,20 +251,21 @@ export async function fetchThreadById(threadId: string) {
         populate: [
           {
             path: "author",
-            select: "_id id name parentId image", // Select only _id and username fields of the author
+            model: User,
+            select: "_id id name image", // 👈 Removed unnecessary "parentId"
           },
-          {
-            path: "children", // Populate the children field within children
-            model: Thread, // The model of the nested children (assuming it's the same "Thread" model)
-            populate: {
-              path: "author", // Populate the author field within nested children
-              model: User,
-              select: "_id id name parentId image", // Select only _id and username fields of the author
-            },
-          },
+          // ❌ DO NOT POPULATE "children" INSIDE CHILDREN — that causes infinite recursion!
+          // If you need 2nd-level replies, handle it manually or with depth limit (see below)
         ],
+        options: {
+          limit: 50, // ⚠️ Safety cap to avoid huge payloads
+        },
       })
-      .exec();
+      .lean(); // ✅ CRITICAL: Returns plain object, no circular refs or Mongoose internals
+
+    if (!thread) {
+      return null;
+    }
 
     return thread;
   } catch (err) {
@@ -291,7 +292,7 @@ export async function addCommentToThread(
 
     // Create the new comment thread
     const commentThread = new Thread({
-      text: {title:commentText},
+      text: { title: commentText },
       author: userId,
       parentId: threadId, // Set the parentId to the original thread's ID
     });
@@ -396,7 +397,6 @@ export const repostThread = async (
   return savedThread;
 };
 
-
 export async function updateThread({ threadId, newText, path }: UpdateParams) {
   try {
     await connectToDB();
@@ -412,11 +412,17 @@ export async function updateThread({ threadId, newText, path }: UpdateParams) {
       throw new Error("Moderation API did not return classes");
     }
 
-    if ((classes.sexual ?? 0) > 0.1 || (classes.violent ?? 0) > 0.1 || (classes.toxic ?? 0) > 0.1) {
-      return { message: "Your Thread contains sexual, violent, or toxic content!" };
+    if (
+      (classes.sexual ?? 0) > 0.1 ||
+      (classes.violent ?? 0) > 0.1 ||
+      (classes.toxic ?? 0) > 0.1
+    ) {
+      return {
+        message: "Your Thread contains sexual, violent, or toxic content!",
+      };
     }
 
-    thread.text = newText; 
+    thread.text = newText;
     await thread.save();
 
     revalidatePath(path);
