@@ -95,9 +95,33 @@ const ThreadCard = ({
 
         <div className="flex-1">
           {isShared && (
-            <p className="text-white text-left font-sans mb-2">
-              {author.name} reposted
-            </p>
+      <div className="flex flex-wrap items-center gap-2 mb-2">
+  <ProfileImage user={author} showBar />
+  <p className="text-white text-left font-sans">
+    {author.name} reposted
+  </p>
+
+  {getDisplayCommunity() && (
+    <Link
+      href={`/communities/${getDisplayCommunity()?.id}`}
+      className="flex items-center gap-1.5 group bg-dark-4 px-2 py-1 rounded text-xs"
+    >
+      <span className="text-gray-2 group-hover:underline">
+        in {getDisplayCommunity()?.name || "No Community"}
+      </span>
+      <Image
+        src={getDisplayCommunity()?.image || "/default-community.png"}
+        alt={getDisplayCommunity()?.name || "Community"}
+        width={16}
+        height={16}
+        className="rounded-full"
+        onError={(e) => {
+          (e.target as HTMLImageElement).src = "/default-community.png";
+        }}
+      />
+    </Link>
+  )}
+</div>
           )}
 
           <div
@@ -164,30 +188,6 @@ const ThreadCard = ({
 
             <div className="flex items-center gap-4 mt-1 text-subtle-medium text-gray-1 text-xs sm:text-sm flex-wrap">
               <span>{getDisplayDate()}</span>
-
-              {getDisplayCommunity() && (
-                <Link
-                  href={`/communities/${getDisplayCommunity()?.id}`}
-                  className="flex items-center gap-1.5 group"
-                >
-                  <span className="group-hover:underline">
-                    {getDisplayCommunity()?.name || "No Community"}
-                  </span>
-                  <Image
-                    src={
-                      getDisplayCommunity()?.image || "/default-community.png"
-                    }
-                    alt={getDisplayCommunity()?.name || "Community"}
-                    width={18}
-                    height={18}
-                    className="rounded-full"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        "/default-community.png";
-                    }}
-                  />
-                </Link>
-              )}
             </div>
           </div>
 
