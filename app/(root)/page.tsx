@@ -4,6 +4,7 @@ import { fetchUser } from "@/lib/actions/user.actions";
 import { Suspense } from "react";
 import ThreadsList from "@/components/ThreadsList";
 import { Skeleton } from "@/components/ui/skeleton";
+import PostThread from "@/components/forms/PostThread";
 export const experimental_ppr = true;
 async function Home(props: {
   searchParams: Promise<{ [key: string]: string | undefined }>;
@@ -19,9 +20,8 @@ async function Home(props: {
 
   return (
     <>
-      <h1 className="head-text text-left">Home</h1>
-
-      <Suspense fallback={<Skeleton/>}>
+      <Suspense fallback={<Skeleton />}>
+        {/* <PostThread userId={userInfo._id.toString()} />{" "} */}
         <ThreadsList page={page} userId={userInfo._id} />
       </Suspense>
     </>

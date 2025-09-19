@@ -1,94 +1,237 @@
 "use client";
+
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Button } from "@/components/ui/button";
 import {
   Form,
-  FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
+  FormControl,
+  FormDescription,
   FormMessage,
-} from "@/components/ui/form";
-
-import * as z from "zod";
-import { Textarea } from "../ui/textarea";
-import { usePathname, useRouter } from "next/navigation";
-// import { updateUser } from "@/lib/actions/user.actions";
+} from "@/components/ui/form"; // adjust path as needed
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import { ThreadValidation } from "@/lib/validations/thread";
-import { createThread } from "@/lib/actions/thread.actions";
+import { createThread, updateThread } from "@/lib/actions/thread.actions";
+import z from "zod";
 import { useOrganization } from "@clerk/nextjs";
+import { usePathname } from "next/navigation";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { Textarea } from "../ui/textarea";
+import { uploadFiles } from "@/lib/uploadthing"; // 👈 YOUR generated helper
 
-interface props {
-  user: {
-    id: string;
-    objectId: string;
-    username: string;
-    name: string;
-    bio: string;
-    image: string;
+interface tweetFormProps {
+  userId: string | undefined;
+  data?: {
+    title: string;
+    images: string[];
+    threadId: string;
   };
-
-  btnTitle: string;
+  isEditing?: boolean;
+  setIsEditing?: () => void;
 }
 
-function PostThread({ userId }: { userId: string }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const { organization } = useOrganization();
+export default function TweetForm({
+  userId,
+  data,
+  isEditing,
+  setIsEditing,
+}: tweetFormProps) {
   const form = useForm({
-    resolver: zodResolver(ThreadValidation),
     defaultValues: {
-      thread: "",
-      accountId: userId,
+      tweet: data?.title||"",
+      image: [] as File[], // ✅ multiple files
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof ThreadValidation>) => {
-    console.log('Organization',organization);
-    const result=await createThread({
-      text: values.thread,
-      author: userId,
-      communityId: organization ? organization.id : null,
-      path: pathname,
-    });
+  const [preview, setPreview] = useState<string[]>(data?.images || []);
+  const { organization } = useOrganization();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [loading, setLoading] = useState(false);
 
-    if(result?.message){
-      toast.warning(result.message);
+  const handleFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    field: any
+  ) => {
+    const newFiles = e.target.files ? Array.from(e.target.files) : [];
+
+    // Merge with existing files in the form field
+    const allFiles = [...(field.value || []), ...newFiles];
+    field.onChange(allFiles);
+
+    // Generate previews for all files
+    if (allFiles.length > 0) {
+      const previews = await Promise.all(
+        allFiles.map(
+          (file) =>
+            new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.readAsDataURL(file);
+            })
+        )
+      );
+      setPreview([...preview, ...previews]);
+    } else {
+      setPreview([]);
     }
-
-    router.push("/");
+    e.target.value = "";
   };
 
+  const onSubmit = async (values: z.infer<typeof ThreadValidation>) => {
+    setLoading(true);
+    setIsEditing(false);
+let imageUrls: string[] = [...(data?.images || [])];
+
+    let signedUrl;
+
+    if (values.image && values.image.length > 0) {
+      try {
+        for (const file of values.image) {
+          const data = new FormData();
+          data.set("file", file);
+
+          const uploadRequest = await fetch("/api/pinata", {
+            method: "POST",
+            body: data,
+          });
+
+          signedUrl = await uploadRequest.json();
+          imageUrls.push(signedUrl); // ✅ Collect URLs for all files
+        }
+      } catch (error: any) {
+        toast.error("Image upload failed: " + error.message);
+        return;
+      }
+    }
+
+    const textData = {
+      title: values.tweet,
+      images: imageUrls,
+    };
+
+    console.log(
+      "📡 [CHECKPOINT 5] Preparing to call createThread with:",
+      textData
+    );
+
+    try {
+      console.log("⚙️ [CHECKPOINT 6] Executing createThread...");
+      let result;
+      if (!isEditing) {
+        result = await createThread({
+          text: textData,
+          author: userId,
+          communityId: organization ? organization.id : null,
+          path: pathname,
+        });
+      } else {
+        result = await updateThread({
+          threadId: data?.threadId,
+          newText: textData,
+          path: pathname,
+        });
+      }
+
+      console.log("📬 [CHECKPOINT 7] createThread returned:", result);
+      setLoading(false);
+      if (result?.message) {
+        toast.warning(result.message);
+        console.warn("⚠️ Thread rejected:", result.message);
+      } else {
+        toast.success("Thread posted!");
+        console.log("🎉 [CHECKPOINT 8] Thread created successfully!");
+      }
+
+      setPreview([]);
+      form.reset();
+    } catch (error) {
+      console.error("💥 [CHECKPOINT 9] createThread threw error:", error);
+      toast.error("Failed to post thread. Check console.");
+    }
+  };
   return (
     <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="mt-10 flex flex-col justify-start gap-10"
-      >
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/* Tweet Textarea Field */}
         <FormField
           control={form.control}
-          name="thread"
+          name="tweet"
           render={({ field }) => (
-            <FormItem className="flex flex-col  gap-3 w-full">
-              <FormLabel className="text-base-semibold text-light-2">
-                Content
-              </FormLabel>
-              <FormControl className="no-focus border border-dark-4 bg-dark-3 text-light-1">
-                <Textarea rows={15} {...field} />
+            <FormItem>
+              <FormLabel>Tweet</FormLabel>
+              <FormControl>
+                <Textarea
+                  rows={3}
+                  placeholder="What's happening?"
+                  {...field}
+                  className="text-white"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <Button type="submit" className="bg-primary-500">
-          Post Thread
-        </Button>
+
+        {/* Image Upload Field */}
+        <FormField
+          control={form.control}
+          name="image"
+          render={({ field }) => (
+            <FormItem>
+              <FormControl>
+                <div className="flex items-center justify-between gap-3 ">
+                  {" "}
+                  {/* 👈 Wrapper div to avoid React.Fragment prop error */}
+                  <Input
+                    id="image-upload"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => handleFileChange(e, field)} // pass full field
+                    className="hidden"
+                    ref={field.ref}
+                  />
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {preview.map((prv, idx) => (
+                      <img
+                        key={idx}
+                        src={prv}
+                        alt={`Preview ${idx}`}
+                        className="w-24 h-24 object-cover rounded border"
+                      />
+                    ))}
+                  </div>
+                  <div
+                    onClick={() =>
+                      document.getElementById("image-upload")?.click()
+                    }
+                    className="cursor-pointer rounded-lg p-4 h-[50px] w-[50px] flex items-center justify-center"
+                  >
+                    <img
+                      src="/assets/imagelogo.svg"
+                      alt="imageLogo"
+                      width={30}
+                      height={30}
+                      className="w-full h-full"
+                    />
+                  </div>
+                  <Button type="submit">
+                    {loading ? "Loading..." : "Upload"}
+                  </Button>
+                </div>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Submit Button */}
       </form>
     </Form>
   );
 }
-
-export default PostThread;

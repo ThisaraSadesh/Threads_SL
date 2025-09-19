@@ -77,20 +77,30 @@ export async function fetchPosts(pageNumber = 1, pageSize = 20) {
 }
 
 interface Params {
-  text: string;
+  text: {
+    title: string;
+    images: string[];
+  };
   author: string;
   communityId: string | null;
   path: string;
 }
 interface ThreadType extends Document {
-  text: string;
+  text: {
+    title: string;
+    images: string[];
+  };
   author: ObjectId;
   community: ObjectId;
   children: ObjectId[];
   createdAt: Date;
   upvotes: string[]; // Use Types.ObjectId
 }
-
+interface UpdateParams {
+  threadId: string;
+  newText: { title: string; images?: string[] }; // same structure as in createThread
+  path: string;
+}
 export async function createThread({
   text,
   author,
@@ -107,7 +117,7 @@ export async function createThread({
       { _id: 1 }
     );
 
-    const result: any = await filterToxicComments(text);
+    const result: any = await filterToxicComments(text.title);
     console.log("RESULTTT", result);
     const classes = result?.moderation_classes;
 
@@ -226,11 +236,11 @@ export async function fetchThreadById(threadId: string) {
         model: User,
         select: "_id id name image",
       })
-      .populate({
-        path: "sharedFrom",
+      .populate([{
+        path: "sharedBy",
         model: User,
         select: "_id id name image",
-      })
+      }])
       .populate({
         path: "community",
         model: Community,
@@ -281,7 +291,7 @@ export async function addCommentToThread(
 
     // Create the new comment thread
     const commentThread = new Thread({
-      text: commentText,
+      text: {title:commentText},
       author: userId,
       parentId: threadId, // Set the parentId to the original thread's ID
     });
@@ -385,3 +395,34 @@ export const repostThread = async (
 
   return savedThread;
 };
+
+
+export async function updateThread({ threadId, newText, path }: UpdateParams) {
+  try {
+    await connectToDB();
+
+    const thread = await Thread.findById(threadId);
+    if (!thread) {
+      throw new Error("Thread not found");
+    }
+
+    const result: any = await filterToxicComments(newText.title);
+    const classes = result?.moderation_classes;
+    if (!classes) {
+      throw new Error("Moderation API did not return classes");
+    }
+
+    if ((classes.sexual ?? 0) > 0.1 || (classes.violent ?? 0) > 0.1 || (classes.toxic ?? 0) > 0.1) {
+      return { message: "Your Thread contains sexual, violent, or toxic content!" };
+    }
+
+    thread.text = newText; 
+    await thread.save();
+
+    revalidatePath(path);
+
+    return { success: true, thread };
+  } catch (error: any) {
+    throw new Error(`Failed to update thread: ${error.message}`);
+  }
+}

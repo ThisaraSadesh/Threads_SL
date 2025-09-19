@@ -22,7 +22,8 @@ async function ThreadsList({ page, userId }: { page: number; userId: string }) {
                 id={post._id}
                 currentUserId={userId}
                 parentId={post.parentId}
-                content={post.text}
+                content={post.text.title}
+                images={post.text.images}
                 author={post.author}
                 community={post.community}
                 createdAt={post.createdAt}

@@ -3,6 +3,9 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { dark } from "@clerk/themes";
+import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
+import { extractRouterConfig } from "uploadthing/server";
+import { ourFileRouter } from "@/app/api/uploadthing/core";
 
 import "../globals.css";
 import LeftSidebar from "@/components/shared/LeftSidebar";
@@ -33,6 +36,7 @@ export default function RootLayout({
     >
       <html lang="en">
         <body className={inter.className}>
+          <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
           <AblyClientProvider>
             <Topbar />
 
@@ -40,6 +44,7 @@ export default function RootLayout({
               <LeftSidebar />
               <section className="main-container">
                 <Toaster />
+
                 <div className="w-full max-w-4xl">{children}</div>
               </section>
               {/* @ts-ignore */}

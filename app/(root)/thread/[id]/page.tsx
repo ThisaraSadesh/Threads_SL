@@ -31,7 +31,8 @@ const page = async ({ params }: { params: Promise<{ id: string }> }) => {
           id={thread._id}
           currentUserId={user?._id || ""}
           parentId={thread.parentId}
-          content={thread.text}
+          content={thread.text.title}
+          images={thread.text.images}
           author={thread.author}
           community={thread.community}
           createdAt={thread.createdAt}
@@ -54,7 +55,8 @@ const page = async ({ params }: { params: Promise<{ id: string }> }) => {
             id={child._id}
             currentUserId={user?.id || ""}
             parentId={child.parentId}
-            content={child.text}
+            content={child.text.title}
+            images={child.text.images}
             author={child.author}
             community={child.community}
             createdAt={child.createdAt}

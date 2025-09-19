@@ -29,6 +29,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "placehold.co",
       },
+        {
+        protocol: "https",
+        hostname: "lavender-characteristic-lobster-828.mypinata.cloud",
+      },
     ],
   },
 };
