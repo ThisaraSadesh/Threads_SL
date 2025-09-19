@@ -1,11 +1,8 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { fetchUser } from "@/lib/actions/user.actions";
-import { Suspense } from "react";
 import ThreadsList from "@/components/ThreadsList";
-import { Skeleton } from "@/components/ui/skeleton";
-import PostThread from "@/components/forms/PostThread";
-export const experimental_ppr = true;
+
 async function Home(props: {
   searchParams: Promise<{ [key: string]: string | undefined }>;
 }) {
@@ -20,10 +17,8 @@ async function Home(props: {
 
   return (
     <>
-      <Suspense fallback={<Skeleton />}>
         {/* <PostThread userId={userInfo._id.toString()} />{" "} */}
         <ThreadsList page={page} userId={userInfo._id} />
-      </Suspense>
     </>
   );
 }

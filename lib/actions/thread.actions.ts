@@ -9,16 +9,14 @@ import Thread from "../models/thread.model";
 import Community from "../models/community.model";
 import { filterToxicComments } from "./filterThreads";
 import { ObjectId, Document } from "mongoose";
-import mongoose from "mongoose";
-import { Types } from "mongoose";
+import { cache } from 'react'
 
-export async function fetchPosts(pageNumber = 1, pageSize = 20) {
+
+export const fetchPosts = cache(async (pageNumber = 1, pageSize = 20) => {
   connectToDB();
 
-  // Calculate the number of posts to skip based on the page number and page size.
   const skipAmount = (pageNumber - 1) * pageSize;
 
-  // Create a query to fetch the posts that have no parent (top-level threads) (a thread that is not a comment/reply).
   const postsQuery = Thread.find({ parentId: { $in: [null, undefined] } })
     .sort({ createdAt: "desc" })
     .skip(skipAmount)
@@ -49,24 +47,22 @@ export async function fetchPosts(pageNumber = 1, pageSize = 20) {
       populate: {
         path: "author",
         model: "User",
-        select: "_id id name image", // fields of the original post's author
+        select: "_id id name image",
       },
     })
-
     .populate({
-      path: "children", // Populate the children field
+      path: "children",
       populate: {
-        path: "author", // Populate the author field within children
+        path: "author",
         model: User,
-        select: "_id name parentId image", // Select only _id and username fields of the author
+        select: "_id name parentId image",
       },
     })
     .lean();
 
-  // Count the total number of top-level posts (threads) i.e., threads that are not comments.
   const totalPostsCount = await Thread.countDocuments({
     parentId: { $in: [null, undefined] },
-  }); // Get the total count of posts
+  });
 
   const posts = await postsQuery.exec();
   const serializedPosts = JSON.parse(JSON.stringify(posts));
@@ -74,8 +70,7 @@ export async function fetchPosts(pageNumber = 1, pageSize = 20) {
   const isNext = totalPostsCount > skipAmount + posts.length;
 
   return { posts: serializedPosts, isNext };
-}
-
+});
 interface Params {
   text: {
     title: string;
@@ -94,11 +89,11 @@ interface ThreadType extends Document {
   community: ObjectId;
   children: ObjectId[];
   createdAt: Date;
-  upvotes: string[]; // Use Types.ObjectId
+  upvotes: string[]; 
 }
 interface UpdateParams {
   threadId: string;
-  newText: { title: string; images?: string[] }; // same structure as in createThread
+  newText: { title: string; images?: string[] }; 
   path: string;
 }
 export async function createThread({
@@ -158,18 +153,20 @@ export async function createThread({
   }
 }
 
-async function fetchAllChildThreads(threadId: string): Promise<any[]> {
-  const childThreads = await Thread.find({ parentId: threadId });
+
+export const fetchAllChildThreads = cache(async function recursiveFetch(
+  threadId: string
+): Promise<any[]> {
+  const childThreads = await Thread.find({ parentId: threadId }).lean(); 
 
   const descendantThreads = [];
   for (const childThread of childThreads) {
-    const descendants = await fetchAllChildThreads(childThread._id);
+    const descendants = await recursiveFetch(childThread._id); // 👈 recurse with cached version
     descendantThreads.push(childThread, ...descendants);
   }
 
   return descendantThreads;
-}
-
+});
 export async function deleteThread(id: string, path: string): Promise<void> {
   try {
     connectToDB();
@@ -226,7 +223,7 @@ export async function deleteThread(id: string, path: string): Promise<void> {
   }
 }
 
-export async function fetchThreadById(threadId: string) {
+export const fetchThreadById = cache(async (threadId: string) => {
   connectToDB();
 
   try {
@@ -252,16 +249,15 @@ export async function fetchThreadById(threadId: string) {
           {
             path: "author",
             model: User,
-            select: "_id id name image", // 👈 Removed unnecessary "parentId"
+            select: "_id id name image",
           },
-          // ❌ DO NOT POPULATE "children" INSIDE CHILDREN — that causes infinite recursion!
-          // If you need 2nd-level replies, handle it manually or with depth limit (see below)
+          
         ],
         options: {
-          limit: 50, // ⚠️ Safety cap to avoid huge payloads
+          limit: 50, 
         },
       })
-      .lean(); // ✅ CRITICAL: Returns plain object, no circular refs or Mongoose internals
+      .lean(); 
 
     if (!thread) {
       return null;
@@ -272,7 +268,7 @@ export async function fetchThreadById(threadId: string) {
     console.error("Error while fetching thread:", err);
     throw new Error("Unable to fetch thread");
   }
-}
+});
 
 export async function addCommentToThread(
   threadId: string,

@@ -1,4 +1,3 @@
-// components/cards/ThreadCard.tsx
 "use client";
 
 import { formatDateString } from "@/lib/utils";
@@ -11,10 +10,6 @@ import { ObjectId } from "mongoose";
 import { ProfileImage } from "../shared/ProfileImage";
 import PostThread from "../../components/forms/PostThread";
 
-// ⚠️ Remove this unless you’re actually using PPR — it’s experimental and can cause issues
-// export const experimental_ppr = true;
-
-// ✅ Define clear, reusable types
 interface Author {
   name: string;
   image: string;
@@ -41,12 +36,12 @@ interface Props {
   images: string[];
   author: Author;
   community: Community | null;
-  createdAt: string; // ISO string expected
+  createdAt: string;
   comments: Array<{ author: { image: string } }>;
   isComment?: boolean;
   upvoteCount: number;
   isShared?: boolean;
-  SharedBy?: Author[]; // Fixed: was tuple type `[{}]`, should be array
+  SharedBy?: Author[];
   userIdfromDB?: ObjectId;
   originalCommunity?: Community;
   originalPost?: OriginalPost;
@@ -72,7 +67,6 @@ const ThreadCard = ({
 }: Props) => {
   const [isEditing, setIsEditing] = useState(false);
 
-  // 💡 Helper to safely get display date
   const getDisplayDate = () => {
     if (isShared && originalPost?.createdAt) {
       return formatDateString(originalPost.createdAt);
@@ -80,13 +74,11 @@ const ThreadCard = ({
     return formatDateString(createdAt);
   };
 
-  // 💡 Helper to safely get display community
   const getDisplayCommunity = () => {
     if (isShared && originalCommunity) return originalCommunity;
     return community;
   };
 
-  // 💡 Helper to safely get display author (for header)
   const getDisplayAuthor = () => {
     if (isShared && originalPost?.author) return originalPost.author;
     return author;
@@ -99,11 +91,9 @@ const ThreadCard = ({
       }`}
     >
       <div className="flex gap-3 w-full">
-        {/* Show original author avatar only if not shared */}
         {!isShared && <ProfileImage user={author} showBar />}
 
         <div className="flex-1">
-          {/* Shared Header */}
           {isShared && (
             <p className="text-white text-left font-sans mb-2">
               {author.name} reposted
@@ -115,7 +105,6 @@ const ThreadCard = ({
               isShared ? "bg-gray-950 p-3 rounded-lg" : ""
             }`}
           >
-            {/* Author/Header Section */}
             {isShared ? (
               <div className="flex items-center gap-3">
                 <ProfileImage user={originalPost?.author} size="h-11 w-11" />
@@ -140,12 +129,10 @@ const ThreadCard = ({
               </div>
             )}
 
-            {/* Content */}
             <p className="text-small-regular text-light-2 break-words">
               {content || "No content"}
             </p>
 
-            {/* Images */}
             {images.length > 0 && (
               <div className="flex gap-3 items-start justify-start flex-wrap">
                 {images.slice(0, 3).map((img, index) => (
@@ -161,7 +148,8 @@ const ThreadCard = ({
                       sizes="(max-width: 768px) 100vw, 250px"
                       className="object-cover rounded-lg"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = "/default-image.png";
+                        (e.target as HTMLImageElement).src =
+                          "/default-image.png";
                       }}
                     />
                     {index === 2 && images.length > 3 && (
@@ -174,7 +162,6 @@ const ThreadCard = ({
               </div>
             )}
 
-            {/* Date + Community */}
             <div className="flex items-center gap-4 mt-1 text-subtle-medium text-gray-1 text-xs sm:text-sm flex-wrap">
               <span>{getDisplayDate()}</span>
 
@@ -187,13 +174,16 @@ const ThreadCard = ({
                     {getDisplayCommunity()?.name || "No Community"}
                   </span>
                   <Image
-                    src={getDisplayCommunity()?.image || "/default-community.png"}
+                    src={
+                      getDisplayCommunity()?.image || "/default-community.png"
+                    }
                     alt={getDisplayCommunity()?.name || "Community"}
                     width={18}
                     height={18}
                     className="rounded-full"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = "/default-community.png";
+                      (e.target as HTMLImageElement).src =
+                        "/default-community.png";
                     }}
                   />
                 </Link>
@@ -201,7 +191,6 @@ const ThreadCard = ({
             </div>
           </div>
 
-          {/* Replies Count (only for comments) */}
           {isComment && comments.length > 0 && (
             <Link href={`/thread/${id}`} className="mt-1 block">
               <p className="text-subtle-medium text-gray-1 text-xs">
@@ -210,10 +199,13 @@ const ThreadCard = ({
             </Link>
           )}
 
-          {/* Actions */}
           <div className="flex flex-col mt-4">
             <div className="flex gap-3.5 items-center">
-              <Suspense fallback={<div className="w-8 h-8 bg-gray-700 rounded animate-pulse" />}>
+              <Suspense
+                fallback={
+                  <div className="w-8 h-8 bg-gray-700 rounded animate-pulse" />
+                }
+              >
                 <Upvote
                   id={id}
                   currentUserId={currentUserId}
@@ -221,7 +213,10 @@ const ThreadCard = ({
                 />
               </Suspense>
 
-              <Link href={`/thread/${id}`} className="flex items-center gap-1 group">
+              <Link
+                href={`/thread/${id}`}
+                className="flex items-center gap-1 group"
+              >
                 <Image
                   src="/assets/reply.svg"
                   alt="reply"
@@ -251,7 +246,6 @@ const ThreadCard = ({
               </button>
             </div>
 
-            {/* Shared Date (if shared and not a comment) */}
             {isShared && !isComment && (
               <p className="mt-2 text-subtle-medium text-gray-1 text-xs">
                 Shared on {formatDateString(createdAt)}
