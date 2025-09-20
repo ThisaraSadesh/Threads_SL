@@ -12,7 +12,7 @@ import { ObjectId, Document } from "mongoose";
 import { cache } from 'react'
 
 
-export const fetchPosts = cache(async (pageNumber = 1, pageSize = 20) => {
+export const fetchPosts =async (pageNumber = 1, pageSize = 20) => {
   connectToDB();
 
   const skipAmount = (pageNumber - 1) * pageSize;
@@ -24,6 +24,7 @@ export const fetchPosts = cache(async (pageNumber = 1, pageSize = 20) => {
     .populate({
       path: "author",
       model: User,
+     
     })
     .populate([
       {
@@ -70,7 +71,7 @@ export const fetchPosts = cache(async (pageNumber = 1, pageSize = 20) => {
   const isNext = totalPostsCount > skipAmount + posts.length;
 
   return { posts: serializedPosts, isNext };
-});
+};
 interface Params {
   text: {
     title: string;
@@ -127,6 +128,7 @@ export async function createThread({
     ) {
       return {
         message: "Your Thread contains sexual, violent, or toxic content!",
+        status:201
       };
     }
     const createdThread = await Thread.create({
@@ -147,26 +149,28 @@ export async function createThread({
       });
     }
 
-    revalidatePath(path);
+    revalidatePath('/');
+    return { success: true,status:200 };
+
   } catch (error: any) {
     throw new Error(`Failed to create thread: ${error.message}`);
   }
 }
 
 
-export const fetchAllChildThreads = cache(async function recursiveFetch(
+export const fetchAllChildThreads = async(
   threadId: string
-): Promise<any[]> {
+): Promise<any[]> =>{
   const childThreads = await Thread.find({ parentId: threadId }).lean(); 
 
   const descendantThreads = [];
   for (const childThread of childThreads) {
-    const descendants = await recursiveFetch(childThread._id); // 👈 recurse with cached version
+    const descendants = await fetchAllChildThreads(childThread._id); // 👈 recurse with cached version
     descendantThreads.push(childThread, ...descendants);
   }
 
   return descendantThreads;
-});
+};
 export async function deleteThread(id: string, path: string): Promise<void> {
   try {
     connectToDB();
@@ -223,7 +227,7 @@ export async function deleteThread(id: string, path: string): Promise<void> {
   }
 }
 
-export const fetchThreadById = cache(async (threadId: string) => {
+export const fetchThreadById = async (threadId: string) => {
   connectToDB();
 
   try {
@@ -268,7 +272,7 @@ export const fetchThreadById = cache(async (threadId: string) => {
     console.error("Error while fetching thread:", err);
     throw new Error("Unable to fetch thread");
   }
-});
+};
 
 export async function addCommentToThread(
   threadId: string,
@@ -402,28 +406,29 @@ export async function updateThread({ threadId, newText, path }: UpdateParams) {
       throw new Error("Thread not found");
     }
 
-    const result: any = await filterToxicComments(newText.title);
-    const classes = result?.moderation_classes;
-    if (!classes) {
-      throw new Error("Moderation API did not return classes");
-    }
+    // const result: any = await filterToxicComments(newText.title);
+    // const classes = result?.moderation_classes;
+    // if (!classes) {
+    //   throw new Error("Moderation API did not return classes");
+    // }
 
-    if (
-      (classes.sexual ?? 0) > 0.1 ||
-      (classes.violent ?? 0) > 0.1 ||
-      (classes.toxic ?? 0) > 0.1
-    ) {
-      return {
-        message: "Your Thread contains sexual, violent, or toxic content!",
-      };
-    }
+    // if (
+    //   (classes.sexual ?? 0) > 0.1 ||
+    //   (classes.violent ?? 0) > 0.1 ||
+    //   (classes.toxic ?? 0) > 0.1
+    // ) {
+    //   return {
+    //     message: "Your Thread contains sexual, violent, or toxic content!",
+    //     status:201
+    //   };
+    // }
 
     thread.text = newText;
     await thread.save();
 
     revalidatePath(path);
 
-    return { success: true, thread };
+    return { success: true,status:200 };
   } catch (error: any) {
     throw new Error(`Failed to update thread: ${error.message}`);
   }

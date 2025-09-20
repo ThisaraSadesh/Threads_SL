@@ -83,7 +83,6 @@ const ThreadCard = ({
     if (isShared && originalPost?.author) return originalPost.author;
     return author;
   };
-
   return !isEditing ? (
     <article
       className={`flex w-full flex-col rounded-xl ${
@@ -141,13 +140,13 @@ const ThreadCard = ({
                 <h4 className="font-semibold text-sm text-white">
                   {author.name || "Unknown User"}
                 </h4>
-                {currentUserId === author.id && (
+                {currentUserId?.toString() === author._id && (
                   <button
                     onClick={() => setIsEditing(true)}
                     className="text-gray-400 hover:text-white transition"
                     aria-label="Edit post"
                   >
-                    ✏️
+                    <img src={'/assets/edit.svg'}/>
                   </button>
                 )}
               </div>

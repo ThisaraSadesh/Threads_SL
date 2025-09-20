@@ -4,7 +4,8 @@ import { fetchPosts } from "@/lib/actions/thread.actions";
 
 async function ThreadsList({ page, userId }: { page: number; userId: string }) {
   const result = await fetchPosts(page, 30);
-  console.log("Threads of resukt", result);
+
+
   return (
     <section className="mt-9 flex flex-col gap-10">
       {result.posts.length === 0 ? (
@@ -13,7 +14,6 @@ async function ThreadsList({ page, userId }: { page: number; userId: string }) {
         <>
           {result.posts.map((post) => {
             const upvotesArrLength = post.upvotes?.length;
-
             return (
               <ThreadCard
                 key={post._id}

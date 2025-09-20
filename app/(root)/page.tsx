@@ -2,7 +2,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { fetchUser } from "@/lib/actions/user.actions";
 import ThreadsList from "@/components/ThreadsList";
-
+import PostThread from "@/components/forms/PostThread"
 async function Home(props: {
   searchParams: Promise<{ [key: string]: string | undefined }>;
 }) {
@@ -17,7 +17,7 @@ async function Home(props: {
 
   return (
     <>
-      {/* <PostThread userId={userInfo._id.toString()} />{" "} */}
+      <PostThread userId={userInfo._id.toString()} />{" "}
       <ThreadsList page={page} userId={userInfo._id} />
     </>
   );

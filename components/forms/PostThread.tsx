@@ -21,7 +21,6 @@ import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Textarea } from "../ui/textarea";
-import { uploadFiles } from "@/lib/uploadthing"; // 👈 YOUR generated helper
 
 interface tweetFormProps {
   userId: string | undefined;
@@ -31,7 +30,7 @@ interface tweetFormProps {
     threadId: string;
   };
   isEditing?: boolean;
-  setIsEditing?: () => void;
+  setIsEditing?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export default function TweetForm({
@@ -42,7 +41,7 @@ export default function TweetForm({
 }: tweetFormProps) {
   const form = useForm({
     defaultValues: {
-      tweet: data?.title||"",
+      tweet: data?.title || "",
       image: [] as File[], // ✅ multiple files
     },
   });
@@ -84,8 +83,8 @@ export default function TweetForm({
 
   const onSubmit = async (values: z.infer<typeof ThreadValidation>) => {
     setLoading(true);
-    setIsEditing(false);
-let imageUrls: string[] = [...(data?.images || [])];
+
+    let imageUrls: string[] = [...(data?.images || [])];
 
     let signedUrl;
 
@@ -137,16 +136,16 @@ let imageUrls: string[] = [...(data?.images || [])];
         });
       }
 
-      console.log("📬 [CHECKPOINT 7] createThread returned:", result);
-      setLoading(false);
-      if (result?.message) {
+      if (result?.success) {
+        if (isEditing) {
+          setLoading(false);
+          setIsEditing(false);
+          toast.success("Thread posted!");
+        }
+      } else {
         toast.warning(result.message);
         console.warn("⚠️ Thread rejected:", result.message);
-      } else {
-        toast.success("Thread posted!");
-        console.log("🎉 [CHECKPOINT 8] Thread created successfully!");
       }
-
       setPreview([]);
       form.reset();
     } catch (error) {
