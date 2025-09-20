@@ -23,9 +23,7 @@ const Upvote = ({
     setUpvoteCount((prev) => prev + 1);
 
     const result = await upvoteThread(id, currentUserId);
-    if (result.success) {
-      toast.success(result.message);
-    } else {
+    if (!result.success) {
       setUpvoteCount((prev) => prev - 1);
 
       toast.error(result.message);

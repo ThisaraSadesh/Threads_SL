@@ -8,7 +8,6 @@ const nextConfig = {
   },
   experimental: {
     serverActions: {},
-    ppr: "incremental",
   },
   transpilePackages: ["mongoose"],
   images: {

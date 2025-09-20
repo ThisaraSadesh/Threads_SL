@@ -17,8 +17,8 @@ async function Home(props: {
 
   return (
     <>
-        {/* <PostThread userId={userInfo._id.toString()} />{" "} */}
-        <ThreadsList page={page} userId={userInfo._id} />
+      {/* <PostThread userId={userInfo._id.toString()} />{" "} */}
+      <ThreadsList page={page} userId={userInfo._id} />
     </>
   );
 }

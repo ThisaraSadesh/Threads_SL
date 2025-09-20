@@ -31,7 +31,7 @@ function LeftSidebar() {
               href={link.route}
               key={link.label}
               className={`leftsidebar_link ${isActive && "bg-primary-500"}`}
-             
+             prefetch={true}
             >
               <Image
                 src={link.imgURL}

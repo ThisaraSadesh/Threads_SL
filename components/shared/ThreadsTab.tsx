@@ -39,7 +39,7 @@ const ThreadsTab = async ({ currentUserId, accountId, accountType }: Props) => {
             id={thread._id}
             currentUserId={currentUserId}
             parentId={thread.parentId}
-            content={thread.text}
+            content={thread.text.title}
             author={
               accountType === "User"
                 ? { name: result.name, image: result.image, id: result.id }
@@ -52,6 +52,7 @@ const ThreadsTab = async ({ currentUserId, accountId, accountType }: Props) => {
             community={thread.community}
             createdAt={thread.createdAt}
             comments={thread.children}
+            upvoteCount={thread.upvotes.length}
           />
           <form action={handleDelete.bind(null, thread._id)}>
             <Button type="submit" className="bg-primary-500">

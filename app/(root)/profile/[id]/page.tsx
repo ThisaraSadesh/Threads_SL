@@ -10,16 +10,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { fetchUser } from "@/lib/actions/user.actions";
 
-export default async function Page({ params }: { params: Promise<{ id: string }> }) {
+export default async function Page({ params }: { params: { id: string } }) {
   const user = await currentUser();
   if (!user) return null;
 
 
-  const prmsId=(await params).id;
-  const userInfo = await fetchUser(prmsId);
+  const userInfo = await fetchUser(params.id);
 
   if (!userInfo?.onboarded) {
-    console.log("id from params:", prmsId);
+    console.log("id from params:", params.id);
     console.log("onboarded is false, redirecting to /onboarding");
     redirect("/onboarding");
   }
@@ -57,20 +56,33 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
               </TabsTrigger>
             ))}
           </TabsList>
-
-          {profileTabs.map((tab) => (
-            <TabsContent
-              key={`content-${tab.label}`}
-              value={tab.value}
-              className="w-full text-light-1"
-            >
-              <ThreadsTab
-                currentUserId={user.id}
-                accountId={userInfo.id}
-                accountType="User"
-              />
-            </TabsContent>
-          ))}
+{profileTabs.map((tab) => (
+  <TabsContent
+    key={`content-${tab.label}`}
+    value={tab.value}
+    className="w-full text-light-1"
+  >
+    {tab.value === "threads" && (
+      <ThreadsTab
+        currentUserId={user.id}
+        accountId={userInfo.id}
+        accountType="User"
+      />
+    )}
+    {tab.value === "replies" && (
+      <div>
+        {/* Content for Replies tab */}
+        <p>Replies content will go here</p>
+      </div>
+    )}
+    {tab.value === "tagged" && (
+      <div>
+        {/* Content for Tagged tab */}
+        <p>Tagged content will go here</p>
+      </div>
+    )}
+  </TabsContent>
+))}
         </Tabs>
       </div>
     </section>
