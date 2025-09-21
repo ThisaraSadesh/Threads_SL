@@ -399,8 +399,8 @@ export const repostThread = async (
 
 export async function updateThread({ threadId, newText, path }: UpdateParams) {
   try {
-    await connectToDB();
-
+    connectToDB();
+    console.log('New Text',newText);
     const thread = await Thread.findById(threadId);
     if (!thread) {
       throw new Error("Thread not found");

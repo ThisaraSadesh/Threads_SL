@@ -9,6 +9,7 @@ import Repost from "../Repost";
 import { ObjectId } from "mongoose";
 import { ProfileImage } from "../shared/ProfileImage";
 import PostThread from "../../components/forms/PostThread";
+import { CarouselSize } from "../shared/Carousel";
 
 interface Author {
   name: string;
@@ -66,7 +67,7 @@ const ThreadCard = ({
   originalPost,
 }: Props) => {
   const [isEditing, setIsEditing] = useState(false);
-
+  const [showCarousel, setShowCarousel] = useState(false);
   const getDisplayDate = () => {
     if (isShared && originalPost?.createdAt) {
       return formatDateString(originalPost.createdAt);
@@ -94,33 +95,36 @@ const ThreadCard = ({
 
         <div className="flex-1">
           {isShared && (
-      <div className="flex flex-wrap items-center gap-2 mb-2">
-  <ProfileImage user={author} showBar />
-  <p className="text-white text-left font-sans">
-    {author.name} reposted
-  </p>
-
-  {getDisplayCommunity() && (
-    <Link
-      href={`/communities/${getDisplayCommunity()?.id}`}
-      className="flex items-center gap-1.5 group bg-dark-4 px-2 py-1 rounded text-xs"
-    >
-      <span className="text-gray-2 group-hover:underline">
-        in {getDisplayCommunity()?.name || "No Community"}
-      </span>
-      <Image
-        src={getDisplayCommunity()?.image || "/default-community.png"}
-        alt={getDisplayCommunity()?.name || "Community"}
-        width={16}
-        height={16}
-        className="rounded-full"
-        onError={(e) => {
-          (e.target as HTMLImageElement).src = "/default-community.png";
-        }}
-      />
-    </Link>
-  )}
-</div>
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <ProfileImage user={author} showBar />
+              <p className="text-white text-left font-sans">
+                {author.name} reposted
+              </p>
+              {/* 
+              {getDisplayCommunity() && (
+                <Link
+                  href={`/communities/${getDisplayCommunity()?.id}`}
+                  className="flex items-center gap-1.5 group bg-dark-4 px-2 py-1 rounded text-xs"
+                >
+                  <span className="text-gray-2 group-hover:underline">
+                    in {getDisplayCommunity()?.name || "No Community"}
+                  </span>
+                  <Image
+                    src={
+                      getDisplayCommunity()?.image || "/default-community.png"
+                    }
+                    alt={getDisplayCommunity()?.name || "Community"}
+                    width={16}
+                    height={16}
+                    className="rounded-full"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src =
+                        "/default-community.png";
+                    }}
+                  />
+                </Link>
+              )} */}
+            </div>
           )}
 
           <div
@@ -146,7 +150,7 @@ const ThreadCard = ({
                     className="text-gray-400 hover:text-white transition"
                     aria-label="Edit post"
                   >
-                    <img src={'/assets/edit.svg'}/>
+                    <img src={"/assets/edit.svg"} />
                   </button>
                 )}
               </div>
@@ -163,17 +167,15 @@ const ThreadCard = ({
                     key={index}
                     className="relative flex-shrink-0"
                     style={{ width: "250px", height: "250px" }}
+                    onClick={() => setShowCarousel(true)}
                   >
                     <Image
                       src={img}
                       alt={`content image ${index + 1}`}
                       fill
                       sizes="(max-width: 768px) 100vw, 250px"
-                      className="object-cover rounded-lg"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          "/default-image.png";
-                      }}
+                      className="object-cover rounded-lg cursor-pointer"
+                  
                     />
                     {index === 2 && images.length > 3 && (
                       <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white text-2xl font-bold rounded-lg">
@@ -182,6 +184,20 @@ const ThreadCard = ({
                     )}
                   </div>
                 ))}
+                {showCarousel && (
+                  <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+                    <div className="relative w-fit flex flex-col items-end justify-center bg-transparent">
+                      <button
+                        onClick={() => setShowCarousel(false)}
+                        className=" text-white text-4xl"
+                      >
+                        ✕
+                      </button>
+
+                      <CarouselSize array={images} />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -245,10 +261,30 @@ const ThreadCard = ({
               </button>
             </div>
 
-            {isShared && !isComment && (
-              <p className="mt-2 text-subtle-medium text-gray-1 text-xs">
-                Shared on {formatDateString(createdAt)}
-              </p>
+            {isShared && !isComment && getDisplayCommunity() && (
+              <div className="flex items-center justify-start gap-2 mt-5">
+                <p className="text-subtle-medium text-gray-1 text-xs">
+                  {formatDateString(createdAt)}
+                </p>
+
+                <Link
+                  href={`/communities/${getDisplayCommunity()?.id}`}
+                  className="flex items-center gap-1.5 group   rounded"
+                >
+                  <span className="text-gray-1 group-hover:underline text-subtle-medium">
+                    -{getDisplayCommunity()?.name || "No Community"}
+                  </span>
+                  <Image
+                    src={
+                      getDisplayCommunity()?.image || "/default-community.png"
+                    }
+                    alt={getDisplayCommunity()?.name || "Community"}
+                    width={16}
+                    height={16}
+                    className="rounded-full w-[16px] h-[16px]"
+                  />
+                </Link>
+              </div>
             )}
           </div>
         </div>

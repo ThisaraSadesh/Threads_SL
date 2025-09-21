@@ -9,7 +9,7 @@ import {
   FormControl,
   FormDescription,
   FormMessage,
-} from "@/components/ui/form"; // adjust path as needed
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
@@ -21,6 +21,7 @@ import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Textarea } from "../ui/textarea";
+import GifPicker, { TenorImage } from "gif-picker-react";
 
 interface tweetFormProps {
   userId: string | undefined;
@@ -42,7 +43,7 @@ export default function TweetForm({
   const form = useForm({
     defaultValues: {
       tweet: data?.title || "",
-      image: [] as File[], // ✅ multiple files
+      image: [] as File[],
     },
   });
 
@@ -51,6 +52,8 @@ export default function TweetForm({
   const router = useRouter();
   const pathname = usePathname();
   const [loading, setLoading] = useState(false);
+  const [showGifPicker, setShowGifPicker] = useState(false);
+  const [selectedGif, setSelectedGif] = useState([]);
 
   const handleFileChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -58,11 +61,9 @@ export default function TweetForm({
   ) => {
     const newFiles = e.target.files ? Array.from(e.target.files) : [];
 
-    // Merge with existing files in the form field
     const allFiles = [...(field.value || []), ...newFiles];
     field.onChange(allFiles);
 
-    // Generate previews for all files
     if (allFiles.length > 0) {
       const previews = await Promise.all(
         allFiles.map(
@@ -80,11 +81,17 @@ export default function TweetForm({
     }
     e.target.value = "";
   };
+  const handleGifClick = async (gif: TenorImage) => {
+    const url = gif.url;
+    setSelectedGif([...selectedGif, url]);
+    console.log("gif Selected", gif.url);
+    setPreview([...preview, url]);
+  };
 
   const onSubmit = async (values: z.infer<typeof ThreadValidation>) => {
     setLoading(true);
-
-    let imageUrls: string[] = [...(data?.images || [])];
+    console.log("selected Gifs", selectedGif);
+    let imageUrls: string[] = [...(data?.images || []), ...selectedGif];
 
     let signedUrl;
 
@@ -113,13 +120,7 @@ export default function TweetForm({
       images: imageUrls,
     };
 
-    console.log(
-      "📡 [CHECKPOINT 5] Preparing to call createThread with:",
-      textData
-    );
-
     try {
-      console.log("⚙️ [CHECKPOINT 6] Executing createThread...");
       let result;
       if (!isEditing) {
         result = await createThread({
@@ -138,9 +139,25 @@ export default function TweetForm({
 
       if (result?.success) {
         if (isEditing) {
-          setLoading(false);
-          setIsEditing(false);
-          toast.success("Thread posted!");
+          setLoading(true);
+
+          result = await updateThread({
+            threadId: data?.threadId,
+            newText: textData,
+            path: pathname,
+          });
+
+          if (result?.success) {
+            toast.success("Thread updated!");
+
+            setTimeout(() => {
+              setLoading(false);
+              setIsEditing(false);
+            }, 5000);
+          } else {
+            setLoading(false);
+            toast.warning(result.message);
+          }
         }
       } else {
         toast.warning(result.message);
@@ -156,7 +173,6 @@ export default function TweetForm({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {/* Tweet Textarea Field */}
         <FormField
           control={form.control}
           name="tweet"
@@ -176,7 +192,6 @@ export default function TweetForm({
           )}
         />
 
-        {/* Image Upload Field */}
         <FormField
           control={form.control}
           name="image"
@@ -185,13 +200,12 @@ export default function TweetForm({
               <FormControl>
                 <div className="flex items-center justify-between gap-3 ">
                   {" "}
-                  {/* 👈 Wrapper div to avoid React.Fragment prop error */}
                   <Input
                     id="image-upload"
                     type="file"
                     accept="image/*"
                     multiple
-                    onChange={(e) => handleFileChange(e, field)} // pass full field
+                    onChange={(e) => handleFileChange(e, field)}
                     className="hidden"
                     ref={field.ref}
                   />
@@ -205,19 +219,42 @@ export default function TweetForm({
                       />
                     ))}
                   </div>
-                  <div
-                    onClick={() =>
-                      document.getElementById("image-upload")?.click()
-                    }
-                    className="cursor-pointer rounded-lg p-4 h-[50px] w-[50px] flex items-center justify-center"
-                  >
+                  <div className="cursor-pointer gap-2 rounded-lg p-4 h-[50px] w-[50px] flex items-center justify-center">
                     <img
                       src="/assets/imagelogo.svg"
                       alt="imageLogo"
                       width={30}
                       height={30}
                       className="w-full h-full"
+                      onClick={() =>
+                        document.getElementById("image-upload")?.click()
+                      }
                     />
+                    <img
+                      src="/assets/gif.svg"
+                      alt="imageLogo"
+                      width={30}
+                      height={30}
+                      className="w-full h-full"
+                      onClick={() => setShowGifPicker(true)}
+                    />
+                    {showGifPicker && (
+                      <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
+                        <div className="relative w-fit flex flex-col items-end justify-center bg-transparent">
+                          <button
+                            onClick={() => setShowGifPicker(false)}
+                            className=" text-white text-4xl"
+                          >
+                            ✕
+                          </button>
+
+                          <GifPicker
+                            tenorApiKey={process.env.NEXT_PUBLIC_TENOR_API_KEY!}
+                            onGifClick={handleGifClick}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <Button type="submit">
                     {loading ? "Loading..." : "Upload"}
@@ -228,8 +265,6 @@ export default function TweetForm({
             </FormItem>
           )}
         />
-
-        {/* Submit Button */}
       </form>
     </Form>
   );

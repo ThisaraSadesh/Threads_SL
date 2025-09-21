@@ -32,6 +32,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "lavender-characteristic-lobster-828.mypinata.cloud",
       },
+         {
+        protocol: "https",
+        hostname: "media.tenor.com",
+      },
     ],
   },
 };
