@@ -10,6 +10,7 @@ import { ObjectId } from "mongoose";
 import { ProfileImage } from "../shared/ProfileImage";
 import PostThread from "../../components/forms/PostThread";
 import { CarouselSize } from "../shared/Carousel";
+import { MeatBallMenu } from "../shared/MeatBallMenu";
 
 interface Author {
   name: string;
@@ -100,30 +101,7 @@ const ThreadCard = ({
               <p className="text-white text-left font-sans">
                 {author.name} reposted
               </p>
-              {/* 
-              {getDisplayCommunity() && (
-                <Link
-                  href={`/communities/${getDisplayCommunity()?.id}`}
-                  className="flex items-center gap-1.5 group bg-dark-4 px-2 py-1 rounded text-xs"
-                >
-                  <span className="text-gray-2 group-hover:underline">
-                    in {getDisplayCommunity()?.name || "No Community"}
-                  </span>
-                  <Image
-                    src={
-                      getDisplayCommunity()?.image || "/default-community.png"
-                    }
-                    alt={getDisplayCommunity()?.name || "Community"}
-                    width={16}
-                    height={16}
-                    className="rounded-full"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src =
-                        "/default-community.png";
-                    }}
-                  />
-                </Link>
-              )} */}
+            
             </div>
           )}
 
@@ -145,13 +123,14 @@ const ThreadCard = ({
                   {author.name || "Unknown User"}
                 </h4>
                 {currentUserId?.toString() === author._id && (
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="text-gray-400 hover:text-white transition"
-                    aria-label="Edit post"
-                  >
-                    <img src={"/assets/edit.svg"} />
-                  </button>
+                  // <button
+                  //   onClick={() => setIsEditing(true)}
+                  //   className="text-gray-400 hover:text-white transition"
+                  //   aria-label="Edit post"
+                  // >
+                  //   <img src={"/assets/edit.svg"} />
+                  // </button>
+                   <MeatBallMenu setIsEditing={setIsEditing} id={id}/>
                 )}
               </div>
             )}
