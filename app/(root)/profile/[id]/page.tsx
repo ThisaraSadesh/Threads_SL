@@ -9,11 +9,11 @@ import ProfileHeader from "@/components/shared/ProfileHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { fetchUser } from "@/lib/actions/user.actions";
+import RepliesTab from "@/components/shared/RepliesTab";
 
 export default async function Page({ params }: { params: { id: string } }) {
   const user = await currentUser();
   if (!user) return null;
-
 
   const userInfo = await fetchUser(params.id);
 
@@ -56,33 +56,33 @@ export default async function Page({ params }: { params: { id: string } }) {
               </TabsTrigger>
             ))}
           </TabsList>
-{profileTabs.map((tab) => (
-  <TabsContent
-    key={`content-${tab.label}`}
-    value={tab.value}
-    className="w-full text-light-1"
-  >
-    {tab.value === "threads" && (
-      <ThreadsTab
-        currentUserId={user.id}
-        accountId={userInfo.id}
-        accountType="User"
-      />
-    )}
-    {tab.value === "replies" && (
-      <div>
-        {/* Content for Replies tab */}
-        <p>Replies content will go here</p>
-      </div>
-    )}
-    {tab.value === "tagged" && (
-      <div>
-        {/* Content for Tagged tab */}
-        <p>Tagged content will go here</p>
-      </div>
-    )}
-  </TabsContent>
-))}
+          {profileTabs.map((tab) => (
+            <TabsContent
+              key={`content-${tab.label}`}
+              value={tab.value}
+              className="w-full text-light-1"
+            >
+              {tab.value === "threads" && (
+                <ThreadsTab
+                  currentUserId={user.id}
+                  accountId={userInfo.id}
+                  accountType="User"
+                />
+              )}
+              {tab.value === "replies" && (
+                <RepliesTab
+                  currentUserId={user.id}
+                  accountId={userInfo.id}
+                  accountType="User"
+                />
+              )}
+              {tab.value === "tagged" && (
+                <div>
+                  <p>Tagged content will go here</p>
+                </div>
+              )}
+            </TabsContent>
+          ))}
         </Tabs>
       </div>
     </section>

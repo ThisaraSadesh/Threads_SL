@@ -9,8 +9,7 @@ import Thread from "../models/thread.model";
 import Community from "../models/community.model";
 import { filterToxicComments } from "./filterThreads";
 import { ObjectId, Document } from "mongoose";
-import { cache } from "react";
-import { success } from "zod";
+
 
 export const fetchPosts = async (pageNumber = 1, pageSize = 20) => {
   connectToDB();
@@ -157,18 +156,20 @@ export async function createThread({
 
 export const fetchAllChildThreads = async (
   threadId: string
+  
 ): Promise<any[]> => {
-  const childThreads = await Thread.find({ parentId: threadId }).lean();
+
+   const childThreads = await Thread.find({ parentId: threadId }).lean();
 
   const descendantThreads = [];
   for (const childThread of childThreads) {
-    const descendants = await fetchAllChildThreads(childThread._id); // 👈 recurse with cached version
+    const descendants = await fetchAllChildThreads(childThread._id);
     descendantThreads.push(childThread, ...descendants);
   }
 
   return descendantThreads;
 };
-export async function deleteThread(id: string, path: string){
+export async function deleteThread(id: string, path: string) {
   try {
     connectToDB();
 
