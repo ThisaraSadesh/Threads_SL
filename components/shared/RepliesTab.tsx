@@ -62,7 +62,7 @@ const RepliesTab = async ({ currentUserId, accountId, accountType }: Props) => {
                   }
                   community={child.community}
                   createdAt={child.createdAt}
-                  comments={child.children} // optional: nested replies
+                  comments={child.children} 
                   upvoteCount={child.upvotes?.length || 0}
                 />
                 <form

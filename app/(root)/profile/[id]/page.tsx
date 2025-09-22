@@ -10,18 +10,26 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { fetchUser } from "@/lib/actions/user.actions";
 import RepliesTab from "@/components/shared/RepliesTab";
+import { fetchAllChildThreads } from "@/lib/actions/thread.actions";
 
 export default async function Page({ params }: { params: { id: string } }) {
   const user = await currentUser();
   if (!user) return null;
 
   const userInfo = await fetchUser(params.id);
-
+  console.log("USER INFO DATA", userInfo);
   if (!userInfo?.onboarded) {
     console.log("id from params:", params.id);
     console.log("onboarded is false, redirecting to /onboarding");
     redirect("/onboarding");
   }
+
+  const childThreadsCount = userInfo.threads.map(async (thread: any) => {
+    const childthreads = await fetchAllChildThreads(thread._id);
+    if (!childthreads || childthreads.length === 0) return null;
+
+    return childthreads.length;
+  });
 
   return (
     <section>
@@ -48,11 +56,15 @@ export default async function Page({ params }: { params: { id: string } }) {
                 />
                 <p className="max-sm:hidden">{tab.label}</p>
 
-                {tab.label === "Threads" && (
+                {tab.label === "Threads" ? (
                   <p className="ml-1 rounded-sm bg-light-4 px-2 py-1 !text-tiny-medium text-light-2">
                     {userInfo.threads.length}
                   </p>
-                )}
+                ) : tab.label === "Replies" ? (
+                  <p className="ml-1 rounded-sm bg-light-4 px-2 py-1 !text-tiny-medium text-light-2">
+                    {childThreadsCount}
+                  </p>
+                ) : null}
               </TabsTrigger>
             ))}
           </TabsList>
