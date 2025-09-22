@@ -9,7 +9,8 @@ import Thread from "../models/thread.model";
 import Community from "../models/community.model";
 import { filterToxicComments } from "./filterThreads";
 import { ObjectId, Document } from "mongoose";
-
+import { extractMentions } from "@/constants";
+import Notification from "../models/notification.model";
 
 export const fetchPosts = async (pageNumber = 1, pageSize = 20) => {
   connectToDB();
@@ -100,16 +101,22 @@ export async function createThread({
   author,
   communityId,
   path,
-}: Params) {
+}: {
+  text: { title: string; images?: string[] };
+  author: string;
+  communityId: string | null;
+  path: string;
+}) {
   try {
     connectToDB();
 
-    console.log("community ID", communityId);
+    console.log("Community ID:", communityId);
 
-    const communityIdObject = await Community.findOne(
-      { id: communityId },
-      { _id: 1 }
-    );
+    let communityIdObject = null;
+    if (communityId) {
+      const found = await Community.findOne({ id: communityId }, { _id: 1 });
+      communityIdObject = found?._id || null;
+    }
 
     const result: any = await filterToxicComments(text.title);
     console.log("RESULTTT", result);
@@ -125,41 +132,84 @@ export async function createThread({
       (classes.toxic ?? 0) > 0.1
     ) {
       return {
-        message: "Your Thread contains sexual, violent, or toxic content!",
-        status: 201,
+        message:
+          "Your Thread contains sexual, violent, or toxic content!",
+        status: 400, // ⚠️ Use 400 for bad input, not 201
       };
     }
+
+    const mentions = extractMentions(text.title);
+
+    const mentionedUsers = await Promise.all(
+      mentions.map(async (username) => {
+        const user = await User.findOne({ username }).select("_id");
+        return user?._id || null;
+      })
+    );
+
+    const validMentionedUserIds = mentionedUsers
+      .filter((id) => id && id.toString() !== author.toString());
+
+    if (validMentionedUserIds.length > 0) {
+      await Notification.insertMany(
+        validMentionedUserIds.map((userId) => ({
+          userId,                    // ← Bob gets notified
+          actorId: author,           // ← Alice tagged Bob
+          type: "mention",
+          entityId: null,            // ← We'll update after thread is created
+          excerpt: text.title,       // ← Preview text
+          read: false,
+          
+        }
+      
+      ))
+        
+      );
+    }
+    console.log('Notification Inserted');
     const createdThread = await Thread.create({
       text,
       author,
-      community: communityIdObject, // Assign communityId if provided, or leave it null for personal account
+      community: communityIdObject,
     });
 
-    // Update User model
+    if (validMentionedUserIds.length > 0) {
+      await Notification.updateMany(
+        {
+          userId: { $in: validMentionedUserIds },
+          entityId: null,            
+          actorId: author,
+        },
+        { $set: { entityId: createdThread._id } }
+      );
+    }
+
     await User.findByIdAndUpdate(author, {
       $push: { threads: createdThread._id },
     });
 
+    // 🏘️ Update community's threads list (if applicable)
     if (communityIdObject) {
-      // Update Community model
       await Community.findByIdAndUpdate(communityIdObject, {
         $push: { threads: createdThread._id },
       });
     }
 
-    revalidatePath("/");
-    return { success: true, status: 200 };
+    // 🔄 Revalidate Next.js cache
+    revalidatePath(path);
+
+    return { success: true, status: 201 }; // 201 = Created
   } catch (error: any) {
+    console.error("CREATE THREAD ERROR:", error);
     throw new Error(`Failed to create thread: ${error.message}`);
   }
 }
 
+
 export const fetchAllChildThreads = async (
   threadId: string
-  
 ): Promise<any[]> => {
-
-   const childThreads = await Thread.find({ parentId: threadId }).lean();
+  const childThreads = await Thread.find({ parentId: threadId }).lean();
 
   const descendantThreads = [];
   for (const childThread of childThreads) {

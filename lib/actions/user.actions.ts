@@ -6,20 +6,23 @@ import { revalidatePath } from "next/cache";
 import Community from "../models/community.model";
 import Thread from "../models/thread.model";
 import User from "../models/user.model";
-import {cache} from 'react';
+import { cache } from "react";
 import { connectToDB } from "../mongoose";
 
-export const fetchUser = async (userId: string) => {
+export const fetchUser = async (userId?: string) => {
   try {
     connectToDB();
 
-    return await User.findOne({ id: userId }).populate({
-      path: "communities",
-      model: Community,
-    }).populate({
-      path:'threads',
-      model:Thread
-    });
+
+    return await User.findOne({ id: userId })
+      .populate({
+        path: "communities",
+        model: Community,
+      })
+      .populate({
+        path: "threads",
+        model: Thread
+      });
   } catch (error: any) {
     throw new Error(`Failed to fetch user: ${error.message}`);
   }
@@ -69,26 +72,28 @@ export const fetchUserPosts = cache(async (userId: string) => {
     connectToDB();
 
     // Find all threads authored by the user with the given userId
-    const threads = await User.findOne({ id: userId }).populate({
-      path: "threads",
-      model: Thread,
-      populate: [
-        {
-          path: "community",
-          model: Community,
-          select: "name id image _id",
-        },
-        {
-          path: "children",
-          model: Thread,
-          populate: {
-            path: "author",
-            model: User,
-            select: "name image id", 
+    const threads = await User.findOne({ id: userId })
+      .populate({
+        path: "threads",
+        model: Thread,
+        populate: [
+          {
+            path: "community",
+            model: Community,
+            select: "name id image _id",
           },
-        },
-      ],
-    }).lean();
+          {
+            path: "children",
+            model: Thread,
+            populate: {
+              path: "author",
+              model: User,
+              select: "name image id",
+            },
+          },
+        ],
+      })
+      .lean();
     return threads;
   } catch (error) {
     console.error("Error fetching user threads:", error);
@@ -96,56 +101,58 @@ export const fetchUserPosts = cache(async (userId: string) => {
   }
 });
 
-export const fetchUsers = cache(async ({
-  userId,
-  searchString = "",
-  pageNumber = 1,
-  pageSize = 20,
-  sortBy = "desc",
-}: {
-  userId: string;
-  searchString?: string;
-  pageNumber?: number;
-  pageSize?: number;
-  sortBy?: SortOrder;
-}) => {
-  try {
-    connectToDB();
+export const fetchUsers = cache(
+  async ({
+    userId,
+    searchString = "",
+    pageNumber = 1,
+    pageSize = 20,
+    sortBy = "desc",
+  }: {
+    userId: string;
+    searchString?: string;
+    pageNumber?: number;
+    pageSize?: number;
+    sortBy?: SortOrder;
+  }) => {
+    try {
+      connectToDB();
 
-    const skipAmount = (pageNumber - 1) * pageSize;
+      const skipAmount = (pageNumber - 1) * pageSize;
 
-    const regex = new RegExp(searchString, "i");
+      const regex = new RegExp(searchString, "i");
 
-    const query: FilterQuery<typeof User> = {
-      id: { $ne: userId }, // Exclude the current user from the results.
-    };
+      const query: FilterQuery<typeof User> = {
+        id: { $ne: userId }, // Exclude the current user from the results.
+      };
 
-    if (searchString.trim() !== "") {
-      query.$or = [
-        { username: { $regex: regex } },
-        { name: { $regex: regex } },
-      ];
+      if (searchString.trim() !== "") {
+        query.$or = [
+          { username: { $regex: regex } },
+          { name: { $regex: regex } },
+        ];
+      }
+
+      const sortOptions = { createdAt: sortBy };
+
+      const usersQuery = User.find(query)
+        .sort(sortOptions)
+        .skip(skipAmount)
+        .limit(pageSize);
+
+      const totalUsersCount = await User.countDocuments(query);
+
+      const users = await usersQuery.exec();
+
+      const isNext = totalUsersCount > skipAmount + users.length;
+
+      return { users, isNext };
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      throw error;
     }
-
-    const sortOptions = { createdAt: sortBy };
-
-    const usersQuery = User.find(query)
-      .sort(sortOptions)
-      .skip(skipAmount)
-      .limit(pageSize);
-
-    const totalUsersCount = await User.countDocuments(query);
-
-    const users = await usersQuery.exec();
-
-    const isNext = totalUsersCount > skipAmount + users.length;
-
-    return { users, isNext };
-  } catch (error) {
-    console.error("Error fetching users:", error);
-    throw error;
   }
-});
+);
 export const getActivity = cache(async (userId: string) => {
   try {
     connectToDB();
@@ -174,3 +181,27 @@ export const getActivity = cache(async (userId: string) => {
     throw error;
   }
 });
+export async function searchUsers(query: string) {
+  try {
+    connectToDB();
+
+    if (!query.trim()) {
+      return [];
+    }
+
+    const users = await User.find({
+      $or: [
+        { username: { $regex: query, $options: "i" } },
+        { name: { $regex: query, $options: "i" } },
+      ],
+    })
+      .select("_id username name image") 
+      .limit(5)
+      .lean();
+
+    return JSON.parse(JSON.stringify(users)); 
+  } catch (error) {
+    console.error(error, "Failed to search users");
+    return [];
+  }
+}

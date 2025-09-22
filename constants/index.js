@@ -39,7 +39,19 @@ export const communityTabs = [
   { value: "requests", label: "Requests", icon: "/assets/request.svg" },
 ];
 
-export const MeatBallDropdownItems=[
-   { value: "Delete", label: "Delete",id:1 },
-  { value: "Edit", label: "Edit",id:2},
-]
+export const MeatBallDropdownItems = [
+  { value: "Delete", label: "Delete", id: 1 },
+  { value: "Edit", label: "Edit", id: 2 },
+];
+
+export const extractMentions = (text) => {
+  const regex = /@(\w+)/g;
+  let match;
+  const usernames = [];
+
+  while ((match = regex.exec(text)) !== null) {
+    usernames.push(match[1]); // "Bob", "Carol"
+  }
+
+  return usernames;
+};

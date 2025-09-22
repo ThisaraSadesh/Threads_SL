@@ -1,7 +1,7 @@
 import { OrganizationSwitcher, SignedIn, SignOutButton } from "@clerk/nextjs";
 import Image from "next/image";
 import Link from "next/link";
-import { dark } from '@clerk/themes'
+import { dark } from "@clerk/themes";
 
 function Topbar() {
   return (
@@ -26,10 +26,20 @@ function Topbar() {
             </SignOutButton>
           </SignedIn>
         </div>
+        <Link href="/activity" className="flex items-center gap-4">
+          <img
+            src={"/assets/notif.svg"}
+            width={20}
+            height={20}
+            alt="notifLogo"
+            className="cursor-pointer"
+          />
+        </Link>
+
         <OrganizationSwitcher
           appearance={{
-            baseTheme:dark,
-            elements: { organizationSwitcherTrigger: "py-2 px-4" }
+            baseTheme: dark,
+            elements: { organizationSwitcherTrigger: "py-2 px-4" },
           }}
         />
       </div>

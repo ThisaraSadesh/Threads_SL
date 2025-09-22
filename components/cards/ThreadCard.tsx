@@ -80,7 +80,26 @@ const ThreadCard = ({
     if (isShared && originalCommunity) return originalCommunity;
     return community;
   };
+function MentionHighlighter({ content }: { content: string }) {
+  if (!content) return <span className="text-light-2">No content</span>;
 
+  const parts = content.split(/(\s+)/);
+
+  return (
+    <p className="text-small-regular break-words text-light-2"> {/* 👈 Apply color here */}
+      {parts.map((part, index) => {
+        if (part.startsWith("@") && !part.includes(" ")) {
+          return (
+            <span key={index} className="text-blue font-medium">
+              {part}
+            </span>
+          );
+        }
+        return <span key={index}>{part}</span>; // Inherits color from parent <p>
+      })}
+    </p>
+  );
+}
   const getDisplayAuthor = () => {
     if (isShared && originalPost?.author) return originalPost.author;
     return author;
@@ -101,7 +120,6 @@ const ThreadCard = ({
               <p className="text-white text-left font-sans">
                 {author.name} reposted
               </p>
-            
             </div>
           )}
 
@@ -130,14 +148,13 @@ const ThreadCard = ({
                   // >
                   //   <img src={"/assets/edit.svg"} />
                   // </button>
-                   <MeatBallMenu setIsEditing={setIsEditing} id={id}/>
+                  <MeatBallMenu setIsEditing={setIsEditing} id={id} />
                 )}
               </div>
             )}
 
-            <p className="text-small-regular text-light-2 break-words">
-              {content || "No content"}
-            </p>
+           <MentionHighlighter content={content} />
+
 
             {images.length > 0 && (
               <div className="flex gap-3 items-start justify-start flex-wrap">
@@ -154,7 +171,6 @@ const ThreadCard = ({
                       fill
                       sizes="(max-width: 768px) 100vw, 250px"
                       className="object-cover rounded-lg cursor-pointer"
-                  
                     />
                     {index === 2 && images.length > 3 && (
                       <div className="absolute inset-0 bg-black bg-opacity-50 flex items-center justify-center text-white text-2xl font-bold rounded-lg">

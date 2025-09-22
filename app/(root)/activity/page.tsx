@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import Image from "next/image";
 
 import Link from "next/link";
+import { fetchUserNotifications } from "@/lib/actions/notification.actions";
 async function Page() {
   const user = await currentUser();
 
@@ -15,8 +16,32 @@ async function Page() {
     redirect("/onboarding");
   }
 
-  const activity = await getActivity(userInfo._id);
+ // utils/notificationDisplay.tsx
 
+ const displayType = (type: string) => {
+  switch (type) {
+    case "mention":
+      return <span className="text-blue-500">mentioned you</span>;
+
+    case "like":
+      return <span className="text-pink-500">liked your post</span>;
+
+    case "follow":
+      return <span className="text-green-500">followed you</span>;
+
+    case "repost":
+      return <span className="text-purple-500">reposted your thread</span>;
+
+    case "comment":
+      return <span className="text-yellow-500">commented on your post</span>;
+
+    default:
+      return <span className="text-gray-400">notified you</span>;
+  }
+};
+
+  const activity = await fetchUserNotifications(userInfo._id);
+  console.log("ACTIVITIES FETCHEd", activity);
   return (
     <section>
       <h1 className="head-text mb-10">Activity</h1>
@@ -24,10 +49,10 @@ async function Page() {
         {activity.length > 0 ? (
           <>
             {activity.map((activity) => (
-              <Link key={activity._id} href={`/thread/${activity.parentId}`}>
+              <Link key={activity._id} href={`/thread/${activity.entityId}`}>
                 <article className="activity-card">
                   <Image
-                    src={activity.author.image}
+                    src={activity.actorId.image}
                     alt="Profile Picture"
                     width={20}
                     height={20}
@@ -35,7 +60,10 @@ async function Page() {
                   />
 
                   <p className="!text-small-regular text-light-1">
-                    <span className="mr-1 text-primary-500">{activity.author.name}</span> replied to your thread
+                    <span className="mr-1 text-primary-500">
+                      {activity.actorId.name}
+                    </span>{" "}
+                    {displayType(activity.type)}
                   </p>
                 </article>
               </Link>

@@ -7,12 +7,10 @@ import {
   FormItem,
   FormLabel,
   FormControl,
-  FormDescription,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { ThreadValidation } from "@/lib/validations/thread";
 import { createThread, updateThread } from "@/lib/actions/thread.actions";
 import z from "zod";
@@ -22,8 +20,10 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Textarea } from "../ui/textarea";
 import GifPicker, { TenorImage } from "gif-picker-react";
+import { Input } from "@/components/ui/input";
+import { searchUsers } from "@/lib/actions/user.actions"; // ✅ Your server action
 
-interface tweetFormProps {
+interface TweetFormProps {
   userId: string | undefined;
   data?: {
     title: string;
@@ -39,7 +39,7 @@ export default function TweetForm({
   data,
   isEditing,
   setIsEditing,
-}: tweetFormProps) {
+}: TweetFormProps) {
   const form = useForm({
     defaultValues: {
       tweet: data?.title || "",
@@ -53,14 +53,50 @@ export default function TweetForm({
   const pathname = usePathname();
   const [loading, setLoading] = useState(false);
   const [showGifPicker, setShowGifPicker] = useState(false);
-  const [selectedGif, setSelectedGif] = useState([]);
 
+  // 💡 Mention State
+  const [text, setText] = useState(data?.title || ""); // Sync with form
+  const [showPopup, setShowPopup] = useState(false);
+  const [query, setQuery] = useState("");
+  const [cursorPos, setCursorPos] = useState(0);
+  const [suggestedUsers, setSuggestedUsers] = useState<any[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // 🔁 Sync text with form on mount/update
+  useEffect(() => {
+    setText(data?.title || "");
+  }, [data?.title]);
+
+  // 🔍 Debounced user search
+  useEffect(() => {
+    if (!query.trim()) {
+      setSuggestedUsers([]);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsLoadingUsers(true);
+      try {
+        const results = await searchUsers(query);
+        setSuggestedUsers(results || []);
+      } catch (err) {
+        console.error("Failed to search users:", err);
+        setSuggestedUsers([]);
+      } finally {
+        setIsLoadingUsers(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [query]);
+
+  // 📎 Handle file uploads
   const handleFileChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
     field: any
   ) => {
     const newFiles = e.target.files ? Array.from(e.target.files) : [];
-
     const allFiles = [...(field.value || []), ...newFiles];
     field.onChange(allFiles);
 
@@ -75,114 +111,156 @@ export default function TweetForm({
             })
         )
       );
-      setPreview([...preview, ...previews]);
-    } else {
-      setPreview([]);
+      setPreview((prev) => [...prev, ...previews]);
     }
     e.target.value = "";
   };
-  const handleGifClick = async (gif: TenorImage) => {
+
+  // 🎁 Handle GIF selection
+  const handleGifClick = (gif: TenorImage) => {
     const url = gif.url;
-    setSelectedGif([...selectedGif, url]);
-    console.log("gif Selected", gif.url);
-    setPreview([...preview, url]);
+    setPreview((prev) => [...prev, url]);
+    setShowGifPicker(false);
   };
 
-const onSubmit = async (values: z.infer<typeof ThreadValidation>) => {
-  setLoading(true); // Start loading
+  // 🖊️ Handle form submit
+  const onSubmit = async (values: z.infer<typeof ThreadValidation>) => {
+    setLoading(true);
 
-  let imageUrls: string[] = [...(data?.images || selectedGif || [])];
+    let imageUrls: string[] = [...(data?.images || [])];
 
-  // Upload images if any
-  if (values.image && values.image.length > 0) {
-    try {
-      for (const file of values.image) {
-        const formData = new FormData();
-        formData.set("file", file);
+    // Upload new images
+    if (values.image && values.image.length > 0) {
+      try {
+        for (const file of values.image) {
+          const formData = new FormData();
+          formData.set("file", file);
 
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 60000);
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 60000);
 
-        try {
-          const uploadRequest = await fetch("/api/pinata", {
-            method: "POST",
-            body: formData,
-            signal: controller.signal,
-          });
+          try {
+            const uploadRequest = await fetch("/api/pinata", {
+              method: "POST",
+              body: formData,
+              signal: controller.signal,
+            });
 
-          clearTimeout(timeoutId);
+            clearTimeout(timeoutId);
 
-          const signedUrl = await uploadRequest.json();
-          imageUrls.push(signedUrl);
-        } catch (error: any) {
-          clearTimeout(timeoutId);
-          if (error.name === "AbortError") {
-            toast.error("Upload timed out. Try smaller files.");
-          } else {
-            toast.error("Image upload failed: " + error.message);
+            const signedUrl = await uploadRequest.json();
+            imageUrls.push(signedUrl);
+          } catch (error: any) {
+            clearTimeout(timeoutId);
+            if (error.name === "AbortError") {
+              toast.error("Upload timed out. Try smaller files.");
+            } else {
+              toast.error("Image upload failed: " + error.message);
+            }
+            setLoading(false);
+            return;
           }
-          setLoading(false); // ✅ Reset on upload error
-          return;
         }
+      } catch (error: any) {
+        toast.error("Image processing failed: " + error.message);
+        setLoading(false);
+        return;
       }
-    } catch (error: any) {
-      toast.error("Image processing failed: " + error.message);
-      setLoading(false); // ✅ Reset on unexpected error
-      return;
     }
-  }
 
-  const textData = {
-    title: values.tweet,
-    images: imageUrls,
+    const textData = {
+      title: values.tweet,
+      images: imageUrls,
+    };
+
+    try {
+      let result;
+
+      if (!isEditing) {
+        result = await createThread({
+          text: textData,
+          author: userId,
+          communityId: organization ? organization.id : null,
+          path: pathname,
+        });
+      } else {
+        result = await updateThread({
+          threadId: data?.threadId,
+          newText: textData,
+          path: pathname,
+        });
+      }
+
+      if (result?.success) {
+        toast.success(isEditing ? "Thread updated!" : "Thread posted!");
+        setPreview([]);
+        form.reset();
+        if (isEditing && setIsEditing) setIsEditing(false);
+        // router.refresh(); // optional
+      } else {
+        toast.warning(result.message || "Something went wrong.");
+      }
+    } catch (error) {
+      console.error("💥 Thread action failed:", error);
+      toast.error("Failed to post thread. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  try {
-    let result;
+  // ➕ Insert selected user into textarea
+const insertMention = (username: string) => {
+  // Recalculate from current state — don't rely on possibly stale values
+  const currentText = text;
+  const currentCursor = textareaRef.current?.selectionStart || cursorPos;
 
-    if (!isEditing) {
-      result = await createThread({
-        text: textData,
-        author: userId,
-        communityId: organization ? organization.id : null,
-        path: pathname,
-      });
-    } else {
-      result = await updateThread({
-        threadId: data?.threadId,
-        newText: textData,
-        path: pathname,
-      });
-    }
+  // Find the LAST @ before cursor (in case state drifted)
+  const lastAt = currentText.lastIndexOf("@", currentCursor - 1);
 
-    if (result?.success) {
-      toast.success(isEditing ? "Thread updated!" : "Thread posted!");
-
-      // ✅ Reset form and state
-      setPreview([]);
-      form.reset();
-
-      // ✅ Exit editing mode if applicable
-      if (isEditing && setIsEditing) {
-        setIsEditing(false);
-      }
-
-      // ✅ Optional: Redirect or refresh
-      // router.refresh(); or router.push(...)
-    } else {
-      toast.warning(result.message || "Something went wrong.");
-    }
-  } catch (error) {
-    console.error("💥 Thread action failed:", error);
-    toast.error("Failed to post thread. Please try again.");
-  } finally {
-    // ✅ ALWAYS turn off loading — success, failure, exception
-    setLoading(false);
+  if (lastAt === -1) {
+    // Safety fallback — just append at end
+    const newText = `${currentText}@${username} `;
+    setText(newText);
+    form.setValue("tweet", newText, { shouldValidate: true });
+    setShowPopup(false);
+    setQuery("");
+    return;
   }
+
+  // Calculate how much to cut out
+  const queryStart = lastAt + 1;
+  const queryEnd = currentCursor;
+  const before = currentText.slice(0, lastAt); // everything before "@"
+  const after = currentText.slice(queryEnd); // everything after cursor
+
+  const newText = `${before}@${username} ${after}`;
+
+  setText(newText);
+  form.setValue("tweet", newText, { shouldValidate: true });
+  setShowPopup(false);
+  setQuery("");
+
+  // Refocus & reposition cursor AFTER inserted mention
+  setTimeout(() => {
+    if (textareaRef.current) {
+      const newCursorPos = lastAt + username.length + 2; // +2 for '@' and space
+      textareaRef.current.focus();
+      textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
+    }
+  }, 0);
 };
+
+  // 🚫 Close popup on outside click
+  useEffect(() => {
+    const handleClickOutside = () => setShowPopup(false);
+    window.addEventListener("click", handleClickOutside);
+    return () => window.removeEventListener("click", handleClickOutside);
+  }, []);
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/* TWEET FIELD WITH MENTIONS */}
         <FormField
           control={form.control}
           name="tweet"
@@ -190,18 +268,152 @@ const onSubmit = async (values: z.infer<typeof ThreadValidation>) => {
             <FormItem>
               <FormLabel>Tweet</FormLabel>
               <FormControl>
-                <Textarea
-                  rows={3}
-                  placeholder="What's happening?"
-                  {...field}
-                  className="text-white"
-                />
+                <div style={{ position: "relative" }}>
+                  <Textarea
+                    {...field}
+                    ref={(e) => {
+                      textareaRef.current = e;
+                      if (typeof field.ref === "function") field.ref(e);
+                      else if (field.ref) field.ref.current = e;
+                    }}
+                    value={text}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      const cursorPosition = e.target.selectionStart || 0;
+
+                      setText(newValue);
+                      field.onChange(e); // Keep RHF in sync
+
+                      // Detect @
+                      if (
+                        newValue[cursorPosition - 1] === "@" &&
+                        newValue[cursorPosition - 2] !== "\\"
+                      ) {
+                        setShowPopup(true);
+                        setQuery("");
+                        setCursorPos(cursorPosition);
+                      } else if (showPopup) {
+                        const lastAt = newValue.lastIndexOf(
+                          "@",
+                          cursorPosition - 1
+                        );
+                        if (lastAt !== -1) {
+                          const currentQuery = newValue.slice(
+                            lastAt + 1,
+                            cursorPosition
+                          );
+
+                          // ✅ ONLY update query if it's valid (no spaces, not empty)
+                          if (
+                            currentQuery.length > 0 &&
+                            !currentQuery.includes(" ")
+                          ) {
+                            setQuery(currentQuery);
+                            setCaretPosition(cursorPosition); // 👈 Also update caret position here!
+                          } else {
+                            setShowPopup(false);
+                          }
+                        } else {
+                          setShowPopup(false);
+                        }
+                      }
+                    }}
+                    placeholder="What's happening? Type @ to mention someone..."
+                    rows={3}
+                    className="text-white"
+                  />
+
+                  {/* 👇 MENTION POPUP */}
+                  {showPopup && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "100%",
+                        left: 0,
+                        backgroundColor: "#1f2937",
+                        border: "1px solid #4b5563",
+                        borderRadius: "8px",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.3)",
+                        zIndex: 1000,
+                        width: "100%",
+                        maxHeight: "180px",
+                        overflowY: "auto",
+                        fontSize: "14px",
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {isLoadingUsers ? (
+                        <div
+                          style={{
+                            padding: "10px",
+                            color: "#9ca3af",
+                            textAlign: "center",
+                          }}
+                        >
+                          Searching...
+                        </div>
+                      ) : suggestedUsers.length > 0 ? (
+                        suggestedUsers.map((user) => (
+                          <div
+                            key={user._id}
+                            onClick={() => insertMention(user.username)}
+                            onMouseDown={(e) => e.preventDefault()}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "10px",
+                              padding: "10px 12px",
+                              cursor: "pointer",
+                              borderBottom: "1px solid #374151",
+                            }}
+                          >
+                            {user.image && (
+                              <img
+                                src={user.image}
+                                alt=""
+                                width="24"
+                                height="24"
+                                style={{
+                                  borderRadius: "50%",
+                                  objectFit: "cover",
+                                }}
+                              />
+                            )}
+                            <div>
+                              <div>
+                                <strong className="text-white">
+                                  @{user.username}
+                                </strong>
+                              </div>
+                              <div
+                                style={{ fontSize: "12px", color: "#9ca3af" }}
+                              >
+                                {user.name}
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div
+                          style={{
+                            padding: "10px",
+                            color: "#9ca3af",
+                            textAlign: "center",
+                          }}
+                        >
+                          No users found
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
+        {/* IMAGE / GIF UPLOAD */}
         <FormField
           control={form.control}
           name="image"
@@ -209,7 +421,6 @@ const onSubmit = async (values: z.infer<typeof ThreadValidation>) => {
             <FormItem>
               <FormControl>
                 <div className="space-y-4 w-full">
-                  {/* Control Bar: Icons + Button */}
                   <div className="flex items-center justify-between gap-3">
                     <Input
                       id="image-upload"
@@ -221,7 +432,6 @@ const onSubmit = async (values: z.infer<typeof ThreadValidation>) => {
                       ref={field.ref}
                     />
 
-                    {/* Left: Trigger buttons */}
                     <div className="flex items-center gap-2">
                       <div
                         className="cursor-pointer rounded-lg p-2 h-[40px] w-[40px] flex items-center justify-center bg-muted hover:bg-accent transition"
@@ -252,13 +462,11 @@ const onSubmit = async (values: z.infer<typeof ThreadValidation>) => {
                       </div>
                     </div>
 
-                    {/* Right: Submit Button */}
                     <Button type="submit" disabled={loading}>
-                      {loading ? "Uploading..." : "Post"}
+                      {loading ? "Posting..." : isEditing ? "Update" : "Post"}
                     </Button>
                   </div>
 
-                  {/* Preview Thumbnails — Rendered BELOW control bar */}
                   {preview.length > 0 && (
                     <div className="flex flex-wrap gap-2 pt-2">
                       {preview.map((prv, idx) => (
@@ -274,14 +482,11 @@ const onSubmit = async (values: z.infer<typeof ThreadValidation>) => {
 
                   {showGifPicker && (
                     <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-                  
                       <div className="relative w-fit flex flex-col items-end justify-center bg-transparent">
-                  
                         <button
                           onClick={() => setShowGifPicker(false)}
-                          className=" text-white text-4xl"
+                          className="text-white text-4xl mb-2"
                         >
-                          
                           ✕
                         </button>
                         <GifPicker
