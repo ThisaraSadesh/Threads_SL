@@ -19,7 +19,7 @@ const NotificationCount = ({ filterUnreadNotifications }: NotificationCountProps
     const channel = ably.channels.get(`user-${user.id}`);
 
     const handleNewNotification = (message: any) => {
-      alert("New notification: " + message.data.title);
+      alert("New notification: " + message.title);
     };
 
     channel.subscribe("new-notification", handleNewNotification);
