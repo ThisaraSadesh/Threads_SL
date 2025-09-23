@@ -11,6 +11,7 @@ import { filterToxicComments } from "./filterThreads";
 import { ObjectId, Document } from "mongoose";
 import { extractMentions } from "@/constants";
 import Notification from "../models/notification.model";
+import Ably from "ably";
 
 export const fetchPosts = async (pageNumber = 1, pageSize = 20) => {
   connectToDB();
@@ -347,19 +348,15 @@ export async function addCommentToThread(
     originalThread.children.push(savedCommentThread._id);
 
     await Notification.insertOne({
-      userId:originalThread.author, 
-      actorId: userId, 
-      type: "upvote",
+      userId: originalThread.author,
+      actorId: userId,
+      type: "comment",
       entityId: threadId,
       read: false,
     });
 
-
     // Save the updated original thread to the database
     await originalThread.save();
-
-
-
 
     revalidatePath(path);
   } catch (err) {
@@ -388,8 +385,8 @@ export async function upvoteThread(threadId: string, userId: string) {
 
     upvotes.push(userId);
     await Notification.insertOne({
-      userId:thread.author, 
-      actorId: userId, 
+      userId: thread.author,
+      actorId: userId,
       type: "upvote",
       entityId: threadId,
       read: false,
@@ -397,6 +394,25 @@ export async function upvoteThread(threadId: string, userId: string) {
 
     thread.upvotes = upvotes;
     await thread.save();
+
+    try {
+      const ably = new Ably.Rest(process.env.ABLY_API_KEY!);
+
+      await ably.channels
+        .get(`user-${thread.author}`)
+        .publish("new-notification", {
+          title: "New upvote ❤️",
+          excerpt: "Someone liked your post!",
+          threadId: threadId,
+          type: "upvote",
+          actor: {
+            id: userId,
+            // Optional: Add name/image if you fetch User
+          },
+        });
+    } catch (error) {
+      console.error("Failed to publish to Ably:", error);
+    }
 
     revalidatePath("/");
 

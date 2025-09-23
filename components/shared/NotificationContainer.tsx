@@ -29,10 +29,10 @@ const NotificationContainer = ({ notifications,handleClickNotification }) => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-start ">
+    <div className="flex flex-col items-center justify-start gap-3">
       {notifications &&
         notifications.map((note: any) => (
-          <>
+          
             <Link
               key={note._id}
               href={`/thread/${note.entityId}`}
@@ -50,7 +50,7 @@ const NotificationContainer = ({ notifications,handleClickNotification }) => {
                   <p
                     className={`${
                       note.read ? "font-normal" : "font-bold"
-                    } text-xs line-clamp-2 `}
+                    } text-xs line-clamp-2  `}
                   >
                     <span className="mr-1 text-primary-500">
                       {note.actorId.name}
@@ -64,7 +64,7 @@ const NotificationContainer = ({ notifications,handleClickNotification }) => {
                 </div>
               </div>
             </Link>
-          </>
+        
         ))}
     </div>
   );
