@@ -338,60 +338,79 @@ export async function addCommentToThread(
     const commentThread = new Thread({
       text: { title: commentText },
       author: userId,
-      parentId: threadId, // Set the parentId to the original thread's ID
+      parentId: threadId,
     });
 
-    // Save the comment thread to the database
+    // Save the comment thread
     const savedCommentThread = await commentThread.save();
 
-    // Add the comment thread's ID to the original thread's children array
+    // Add comment to original thread's children
     originalThread.children.push(savedCommentThread._id);
 
+    // ✅ CREATE NOTIFICATION
     await Notification.insertOne({
-      userId: originalThread.author,
-      actorId: userId,
+      userId: originalThread.author, // ← Notify post author
+      actorId: userId, // ← Commenter's ObjectId
       type: "comment",
-      entityId: threadId,
+      entityId: originalThread._id,
       read: false,
     });
 
-    // Save the updated original thread to the database
+    // Save updated thread
     await originalThread.save();
 
-
-     try {
+    // ✅ REAL-TIME NOTIFICATION VIA ABLY
+    try {
       const ably = new Ably.Rest(process.env.ABLY_API_KEY!);
 
-      // Get the thread author's Clerk user ID
+      // 👇 Get THREAD AUTHOR (to send notification TO them)
       const threadAuthor = await User.findById(originalThread.author);
       if (!threadAuthor) {
         console.error("Thread author not found");
         return { success: false, message: "Thread author not found" };
       }
 
-      const authorClerkId = threadAuthor.id; // This is the Clerk user ID
-  
+      // 👇 Get COMMENTER/ACTOR (the person who commented)
+      const commenter = await User.findById(userId); // ← THIS WAS MISSING!
+      if (!commenter) {
+        console.error("Commenter user not found");
+        return { success: false, message: "Commenter user not found" };
+      }
+
+      console.log(
+        "Comment - Publishing to channel:",
+        `user-${threadAuthor.id}`
+      );
+      console.log(
+        "Comment - Thread author MongoDB ObjectId:",
+        originalThread.author
+      );
+      console.log("Comment - Thread author Clerk ID:", threadAuthor.id);
+      console.log("Comment - Commenter MongoDB ObjectId:", userId);
+      console.log("Comment - Commenter Clerk ID:", commenter.id);
+
       await ably.channels
-        .get(`user-${authorClerkId}`)
+        .get(`user-${threadAuthor.id}`)
         .publish("new-notification", {
           title: "New Comment 💬",
-          excerpt: "Someone commented on your post!",
-          threadId: originalThread._id,
+          excerpt: `${commenter.name} commented on your post!`,
+          threadId: threadId  ,
           type: "comment",
           actor: {
             id: userId,
-            image: threadAuthor.image,
-            name: threadAuthor.name,
+            image: threadAuthor.image || "/default-avatar.png", // ← CORRECT USER!
           },
         });
 
-      console.log("Ably notification published successfully");
+      console.log("Comment - Ably notification published successfully");
     } catch (error) {
-      console.error("Failed to publish to Ably:", error);
-      console.error("Error details:", error);
+      console.error("Comment - Failed to publish to Ably:", error);
+      console.error("Comment - Error details:", error);
     }
 
     revalidatePath(path);
+
+    return { success: true, message: "Comment added successfully" }; // 👈 Added return
   } catch (err) {
     console.error("Error while adding comment:", err);
     throw new Error("Unable to add comment");
@@ -439,7 +458,7 @@ export async function upvoteThread(threadId: string, userId: string) {
       }
 
       const authorClerkId = threadAuthor.id; // This is the Clerk user ID
-  
+
       await ably.channels
         .get(`user-${authorClerkId}`)
         .publish("new-notification", {
