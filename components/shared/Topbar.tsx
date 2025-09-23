@@ -2,8 +2,15 @@ import { OrganizationSwitcher, SignedIn, SignOutButton } from "@clerk/nextjs";
 import Image from "next/image";
 import Link from "next/link";
 import { dark } from "@clerk/themes";
+import { NotificationBell } from "./NotificationBell";
+import { fetchUserNotifications } from "@/lib/actions/notification.actions";
+import { currentUser } from "@clerk/nextjs/server";
+import { fetchUser } from "@/lib/actions/user.actions";
+async function Topbar() {
+  const user = await currentUser();
+  const userInfo = await fetchUser(user?.id);
 
-function Topbar() {
+  const notifications = await fetchUserNotifications(userInfo._id);
   return (
     <nav className="topbar">
       <Link href="/" className="flex items-center gap-4">
@@ -26,15 +33,7 @@ function Topbar() {
             </SignOutButton>
           </SignedIn>
         </div>
-        <Link href="/activity" className="flex items-center gap-4">
-          <img
-            src={"/assets/notif.svg"}
-            width={20}
-            height={20}
-            alt="notifLogo"
-            className="cursor-pointer"
-          />
-        </Link>
+        <NotificationBell notifications={notifications} />
 
         <OrganizationSwitcher
           appearance={{
