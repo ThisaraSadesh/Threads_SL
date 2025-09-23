@@ -398,11 +398,17 @@ export async function upvoteThread(threadId: string, userId: string) {
     try {
       const ably = new Ably.Rest(process.env.ABLY_API_KEY!);
 
-      // Convert ObjectId to string for consistent channel naming
-      const authorId = thread.author.toString();
-      console.log("Publishing to channel:", `user-${authorId}`);
-      console.log("Thread author ObjectId:", thread.author);
-      console.log("Thread author as string:", authorId);
+      // Get the thread author's Clerk user ID
+      const threadAuthor = await User.findById(thread.author);
+      if (!threadAuthor) {
+        console.error("Thread author not found");
+        return { success: false, message: "Thread author not found" };
+      }
+
+      const authorClerkId = threadAuthor.id; // This is the Clerk user ID
+      console.log("Publishing to channel:", `user-${authorClerkId}`);
+      console.log("Thread author MongoDB ObjectId:", thread.author);
+      console.log("Thread author Clerk ID:", authorClerkId);
       console.log("Publishing notification data:", {
         title: "New upvote ❤️",
         excerpt: "Someone liked your post!",
@@ -413,19 +419,17 @@ export async function upvoteThread(threadId: string, userId: string) {
         },
       });
 
-      await ably.channels
-        .get(`user-${authorId}`)
-        .publish("new-notification", {
-          title: "New upvote ❤️",
-          excerpt: "Someone liked your post!",
-          threadId: threadId,
-          type: "upvote",
-          actor: {
-            id: userId,
-            // Optional: Add name/image if you fetch User
-          },
-        });
-        
+      await ably.channels.get(`user-${authorClerkId}`).publish("new-notification", {
+        title: "New upvote ❤️",
+        excerpt: "Someone liked your post!",
+        threadId: threadId,
+        type: "upvote",
+        actor: {
+          id: userId,
+          // Optional: Add name/image if you fetch User
+        },
+      });
+
       console.log("Ably notification published successfully");
     } catch (error) {
       console.error("Failed to publish to Ably:", error);
