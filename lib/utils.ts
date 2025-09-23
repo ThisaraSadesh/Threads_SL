@@ -43,7 +43,47 @@ export function formatThreadCount(count: number): string {
 }
 
 
-export function checkActiveUsers(channelName:string,Users:string[]){
-  
 
-}
+
+export const formatTimeAgo = (date: string | Date): string => {
+  const now = new Date();
+  const past = new Date(date);
+  const diffMs = now.getTime() - past.getTime(); 
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHrs = Math.floor(diffMin / 60);
+  const diffDays = Math.floor(diffHrs / 24);
+
+  if (diffSec < 60) {
+    return "just now";
+  }
+
+  if (diffMin < 60) {
+    return `${diffMin} minute${diffMin === 1 ? "" : "s"} ago`;
+  }
+
+  if (diffHrs < 24) {
+    return `${diffHrs} hour${diffHrs === 1 ? "" : "s"} ago`;
+  }
+
+  if (diffDays === 1) {
+    return "Yesterday";
+  }
+
+  if (diffDays < 7) {
+    return `${diffDays} days ago`;
+  }
+
+  if (diffDays < 30) {
+    return past.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+  }
+
+  return past.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+};

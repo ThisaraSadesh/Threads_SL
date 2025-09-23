@@ -1,6 +1,6 @@
 'use client'
 
-import { formatDateString } from "@/lib/utils";
+import { formatDateString, formatTimeAgo } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -9,22 +9,22 @@ const NotificationContainer = ({ notifications,handleClickNotification }) => {
   const displayType = (type: string) => {
     switch (type) {
       case "mention":
-        return <span className="text-blue-500">mentioned you in a post</span>;
+        return <span className="text-gray-400">mentioned you in a post @</span>;
 
-      case "like":
-        return <span className="text-pink-500">liked your post</span>;
+      case "upvote":
+        return <span className="text-gray-400">liked your post ❤️</span>;
 
       case "follow":
-        return <span className="text-green-500">followed you</span>;
+        return <span className="text-gray-400">followed you 👉</span>;
 
       case "repost":
-        return <span className="text-purple-500">reposted your thread</span>;
+        return <span className="text-gray-400">reposted your thread 🔁</span>;
 
       case "comment":
-        return <span className="text-yellow-500">commented on your post</span>;
+        return <span className="text-gray-400">commented on your post 💬</span>;
 
       default:
-        return <span className="text-gray-400">notified you</span>;
+        return <span className="text-gray-400">notified you 🔔</span>;
     }
   };
 
@@ -42,24 +42,24 @@ const NotificationContainer = ({ notifications,handleClickNotification }) => {
                 <Image
                   src={note.actorId.image}
                   alt="Profile Picture"
-                  width={20}
-                  height={20}
-                  className="rounded-full object-cover w-[20px] h-[20px]"
+                  width={40}
+                  height={40}
+                  className="rounded-full object-cover w-[40px] h-[40px]"
                 />
                 <div className=" flex gap-5 items-center justify-center">
                   <p
                     className={`${
                       note.read ? "font-normal" : "font-bold"
-                    } text-xs`}
+                    } text-xs line-clamp-2 `}
                   >
                     <span className="mr-1 text-primary-500">
                       {note.actorId.name}
-                    </span>{" "}
+                    </span>
                     {displayType(note.type)}
                   </p>
 
                   <p className="text-subtle-semibold">
-                    {formatDateString(note.createdAt.toString())}
+                    {formatTimeAgo(note.createdAt.toString())}
                   </p>
                 </div>
               </div>

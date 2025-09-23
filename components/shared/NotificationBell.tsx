@@ -22,7 +22,7 @@ export function NotificationBell({ notifications }: any) {
           <img src={"/assets/notif.svg"} width={15} height={15} alt="bellImg" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 bg-black">
+      <PopoverContent className="w-100 bg-black">
         <NotificationContainer
           notifications={notifications}
           handleClickNotification={handleClickNotification}

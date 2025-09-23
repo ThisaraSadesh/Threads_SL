@@ -132,8 +132,7 @@ export async function createThread({
       (classes.toxic ?? 0) > 0.1
     ) {
       return {
-        message:
-          "Your Thread contains sexual, violent, or toxic content!",
+        message: "Your Thread contains sexual, violent, or toxic content!",
         status: 400, // ⚠️ Use 400 for bad input, not 201
       };
     }
@@ -147,26 +146,23 @@ export async function createThread({
       })
     );
 
-    const validMentionedUserIds = mentionedUsers
-      .filter((id) => id && id.toString() !== author.toString());
+    const validMentionedUserIds = mentionedUsers.filter(
+      (id) => id && id.toString() !== author.toString()
+    );
 
     if (validMentionedUserIds.length > 0) {
       await Notification.insertMany(
         validMentionedUserIds.map((userId) => ({
-          userId,                    // ← Bob gets notified
-          actorId: author,           // ← Alice tagged Bob
+          userId, // ← Bob gets notified
+          actorId: author, // ← Alice tagged Bob
           type: "mention",
-          entityId: null,            // ← We'll update after thread is created
-          excerpt: text.title,       // ← Preview text
+          entityId: null, // ← We'll update after thread is created
+          excerpt: text.title, // ← Preview text
           read: false,
-          
-        }
-      
-      ))
-        
+        }))
       );
     }
-    console.log('Notification Inserted');
+    console.log("Notification Inserted");
     const createdThread = await Thread.create({
       text,
       author,
@@ -177,7 +173,7 @@ export async function createThread({
       await Notification.updateMany(
         {
           userId: { $in: validMentionedUserIds },
-          entityId: null,            
+          entityId: null,
           actorId: author,
         },
         { $set: { entityId: createdThread._id } }
@@ -204,7 +200,6 @@ export async function createThread({
     throw new Error(`Failed to create thread: ${error.message}`);
   }
 }
-
 
 export const fetchAllChildThreads = async (
   threadId: string
@@ -351,8 +346,20 @@ export async function addCommentToThread(
     // Add the comment thread's ID to the original thread's children array
     originalThread.children.push(savedCommentThread._id);
 
+    await Notification.insertOne({
+      userId:originalThread.author, 
+      actorId: userId, 
+      type: "upvote",
+      entityId: threadId,
+      read: false,
+    });
+
+
     // Save the updated original thread to the database
     await originalThread.save();
+
+
+
 
     revalidatePath(path);
   } catch (err) {
@@ -380,6 +387,14 @@ export async function upvoteThread(threadId: string, userId: string) {
     // }
 
     upvotes.push(userId);
+    await Notification.insertOne({
+      userId:thread.author, 
+      actorId: userId, 
+      type: "upvote",
+      entityId: threadId,
+      read: false,
+    });
+
     thread.upvotes = upvotes;
     await thread.save();
 
