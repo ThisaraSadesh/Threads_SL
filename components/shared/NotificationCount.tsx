@@ -1,18 +1,23 @@
 "use client";
 
 import { useAbly } from "@/app/providers/AblyClientProvider";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs"; // ✅ CLIENT-SIDE HOOK
 
 interface NotificationCountProps {
-  filterUnreadNotifications: any[];
+  filteredUnreadNotifications: any[];
 }
 
 const NotificationCount = ({
-  filterUnreadNotifications,
+  filteredUnreadNotifications,
 }: NotificationCountProps) => {
   const ably = useAbly();
   const { user } = useUser(); // ✅ Get current user on client
+
+ const [unreadCount, setUnreadCount] = useState(
+    filteredUnreadNotifications.length || 0
+  );
+
 
   useEffect(() => {
     // Wait until user is loaded
@@ -27,6 +32,8 @@ const NotificationCount = ({
     const channel = ably.channels.get(`user-${user.id}`);
 
     const handleNewNotification = (message: any) => {
+              setUnreadCount(prev => prev + 1);
+
       console.log("Received notification message:", message);
       console.log("Message data:", message.data);
       console.log("User channel:", `user-${user.id}`);
@@ -52,8 +59,8 @@ const NotificationCount = ({
   return (
     <div>
       <p>
-        {filterUnreadNotifications.length > 0
-          ? filterUnreadNotifications.length
+        {filteredUnreadNotifications.length > 0
+          ? filteredUnreadNotifications.length
           : ""}
       </p>
     </div>

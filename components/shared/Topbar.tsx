@@ -8,9 +8,10 @@ import { currentUser } from "@clerk/nextjs/server";
 import { fetchUser } from "@/lib/actions/user.actions";
 async function Topbar() {
   const user = await currentUser();
+  if(!user) return null;
   const userInfo = await fetchUser(user?.id);
 
-  const notifications = await fetchUserNotifications(userInfo._id);
+  const notifications = await fetchUserNotifications(user.id);
   return (
     <nav className="topbar">
       <Link href="/" className="flex items-center gap-4">
@@ -33,7 +34,7 @@ async function Topbar() {
             </SignOutButton>
           </SignedIn>
         </div>
-        <NotificationBell notifications={notifications} />
+        <NotificationBell initialNotifications={notifications} />
 
         <OrganizationSwitcher
           appearance={{

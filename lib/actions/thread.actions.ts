@@ -358,6 +358,39 @@ export async function addCommentToThread(
     // Save the updated original thread to the database
     await originalThread.save();
 
+
+     try {
+      const ably = new Ably.Rest(process.env.ABLY_API_KEY!);
+
+      // Get the thread author's Clerk user ID
+      const threadAuthor = await User.findById(originalThread.author);
+      if (!threadAuthor) {
+        console.error("Thread author not found");
+        return { success: false, message: "Thread author not found" };
+      }
+
+      const authorClerkId = threadAuthor.id; // This is the Clerk user ID
+  
+      await ably.channels
+        .get(`user-${authorClerkId}`)
+        .publish("new-notification", {
+          title: "New Comment 💬",
+          excerpt: "Someone commented on your post!",
+          threadId: originalThread._id,
+          type: "comment",
+          actor: {
+            id: userId,
+            image: threadAuthor.image,
+            name: threadAuthor.name,
+          },
+        });
+
+      console.log("Ably notification published successfully");
+    } catch (error) {
+      console.error("Failed to publish to Ably:", error);
+      console.error("Error details:", error);
+    }
+
     revalidatePath(path);
   } catch (err) {
     console.error("Error while adding comment:", err);
@@ -406,29 +439,20 @@ export async function upvoteThread(threadId: string, userId: string) {
       }
 
       const authorClerkId = threadAuthor.id; // This is the Clerk user ID
-      console.log("Publishing to channel:", `user-${authorClerkId}`);
-      console.log("Thread author MongoDB ObjectId:", thread.author);
-      console.log("Thread author Clerk ID:", authorClerkId);
-      console.log("Publishing notification data:", {
-        title: "New upvote ❤️",
-        excerpt: "Someone liked your post!",
-        threadId: threadId,
-        type: "upvote",
-        actor: {
-          id: userId,
-        },
-      });
-
-      await ably.channels.get(`user-${authorClerkId}`).publish("new-notification", {
-        title: "New upvote ❤️",
-        excerpt: "Someone liked your post!",
-        threadId: threadId,
-        type: "upvote",
-        actor: {
-          id: userId,
-          // Optional: Add name/image if you fetch User
-        },
-      });
+  
+      await ably.channels
+        .get(`user-${authorClerkId}`)
+        .publish("new-notification", {
+          title: "New upvote ❤️",
+          excerpt: "Someone liked your post!",
+          threadId: threadId,
+          type: "upvote",
+          actor: {
+            id: userId,
+            image: threadAuthor.image,
+            name: threadAuthor.name,
+          },
+        });
 
       console.log("Ably notification published successfully");
     } catch (error) {
