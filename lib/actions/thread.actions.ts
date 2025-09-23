@@ -398,8 +398,23 @@ export async function upvoteThread(threadId: string, userId: string) {
     try {
       const ably = new Ably.Rest(process.env.ABLY_API_KEY!);
 
+      // Convert ObjectId to string for consistent channel naming
+      const authorId = thread.author.toString();
+      console.log("Publishing to channel:", `user-${authorId}`);
+      console.log("Thread author ObjectId:", thread.author);
+      console.log("Thread author as string:", authorId);
+      console.log("Publishing notification data:", {
+        title: "New upvote ❤️",
+        excerpt: "Someone liked your post!",
+        threadId: threadId,
+        type: "upvote",
+        actor: {
+          id: userId,
+        },
+      });
+
       await ably.channels
-        .get(`user-${thread.author}`)
+        .get(`user-${authorId}`)
         .publish("new-notification", {
           title: "New upvote ❤️",
           excerpt: "Someone liked your post!",
@@ -410,8 +425,11 @@ export async function upvoteThread(threadId: string, userId: string) {
             // Optional: Add name/image if you fetch User
           },
         });
+        
+      console.log("Ably notification published successfully");
     } catch (error) {
       console.error("Failed to publish to Ably:", error);
+      console.error("Error details:", error);
     }
 
     revalidatePath("/");
