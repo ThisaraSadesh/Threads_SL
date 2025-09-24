@@ -29,7 +29,7 @@ const NotificationContainer = ({ notifications, handleClickNotification }) => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-start gap-3">
+    <div className="flex flex-col items-center  justify-start gap-3 overflow-y-scroll overflow-x-hidden h-[465px]">
       {sortedNotifications &&
         sortedNotifications.map((note: any) => (
           <Link

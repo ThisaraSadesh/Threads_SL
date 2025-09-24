@@ -5,8 +5,8 @@ import { FilterQuery, SortOrder } from "mongoose";
 import Community from "../models/community.model";
 import Thread from "../models/thread.model";
 import User from "../models/user.model";
-import { cache } from 'react';
-import { connectToDB } from "../mongoose";
+import { cache } from "react";
+import connectToDB from "../mongoose";
 
 export async function createCommunity(
   id: string,
@@ -17,8 +17,8 @@ export async function createCommunity(
   createdById: string // Change the parameter name to reflect it's an id
 ) {
   try {
-     connectToDB();
-    console.log('data',id,name,username);
+    await connectToDB();
+    console.log("data", id, name, username);
     // Find the user with the provided unique id
     const user = await User.findOne({ id: createdById });
 
@@ -35,7 +35,7 @@ export async function createCommunity(
       createdBy: user._id, // Use the mongoose ID of the user
     });
 
-    console.log('community to be created',newCommunity);
+    console.log("community to be created", newCommunity);
     const createdCommunity = await newCommunity.save();
 
     // Update User model
@@ -52,7 +52,7 @@ export async function createCommunity(
 
 export const fetchCommunityDetails = cache(async (id: string) => {
   try {
-    connectToDB();
+    await connectToDB();
 
     const communityDetails = await Community.findOne({ id }).populate([
       "createdBy",
@@ -73,7 +73,7 @@ export const fetchCommunityDetails = cache(async (id: string) => {
 
 export const fetchCommunityPosts = cache(async (id: string) => {
   try {
-    connectToDB();
+    await connectToDB();
 
     const communityPosts = await Community.findById(id).populate({
       path: "threads",
@@ -103,59 +103,61 @@ export const fetchCommunityPosts = cache(async (id: string) => {
     throw error;
   }
 });
-export const fetchCommunities = cache(async ({
-  searchString = "",
-  pageNumber = 1,
-  pageSize = 20,
-  sortBy = "desc",
-}: {
-  searchString?: string;
-  pageNumber?: number;
-  pageSize?: number;
-  sortBy?: SortOrder;
-}) => {
-  try {
-    connectToDB();
-    const skipAmount = (pageNumber - 1) * pageSize;
+export const fetchCommunities = cache(
+  async ({
+    searchString = "",
+    pageNumber = 1,
+    pageSize = 20,
+    sortBy = "desc",
+  }: {
+    searchString?: string;
+    pageNumber?: number;
+    pageSize?: number;
+    sortBy?: SortOrder;
+  }) => {
+    try {
+      await connectToDB();
+      const skipAmount = (pageNumber - 1) * pageSize;
 
-    const regex = new RegExp(searchString, "i");
+      const regex = new RegExp(searchString, "i");
 
-    const query: FilterQuery<typeof Community> = {};
+      const query: FilterQuery<typeof Community> = {};
 
-    if (searchString.trim() !== "") {
-      query.$or = [
-        { username: { $regex: regex } },
-        { name: { $regex: regex } },
-      ];
+      if (searchString.trim() !== "") {
+        query.$or = [
+          { username: { $regex: regex } },
+          { name: { $regex: regex } },
+        ];
+      }
+
+      const sortOptions = { createdAt: sortBy };
+
+      const communitiesQuery = Community.find(query)
+        .sort(sortOptions)
+        .skip(skipAmount)
+        .limit(pageSize)
+        .populate("members");
+
+      const totalCommunitiesCount = await Community.countDocuments(query);
+
+      const communities = await communitiesQuery.exec();
+
+      const isNext = totalCommunitiesCount > skipAmount + communities.length;
+
+      return { communities, isNext };
+    } catch (error) {
+      console.error("Error fetching communities:", error);
+      throw error;
     }
-
-    const sortOptions = { createdAt: sortBy };
-
-    const communitiesQuery = Community.find(query)
-      .sort(sortOptions)
-      .skip(skipAmount)
-      .limit(pageSize)
-      .populate("members");
-
-    const totalCommunitiesCount = await Community.countDocuments(query);
-
-    const communities = await communitiesQuery.exec();
-
-    const isNext = totalCommunitiesCount > skipAmount + communities.length;
-
-    return { communities, isNext };
-  } catch (error) {
-    console.error("Error fetching communities:", error);
-    throw error;
   }
-});
+);
 
 export async function addMemberToCommunity(
   communityId: string,
   memberId: string
 ) {
   try {
-    connectToDB();
+    await connectToDB();
 
     // Find the community by its unique id
     const community = await Community.findOne({ id: communityId });
@@ -197,7 +199,7 @@ export async function removeUserFromCommunity(
   communityId: string
 ) {
   try {
-    connectToDB();
+    await connectToDB();
 
     const userIdObject = await User.findOne({ id: userId }, { _id: 1 });
     const communityIdObject = await Community.findOne(
@@ -240,7 +242,7 @@ export async function updateCommunityInfo(
   image: string
 ) {
   try {
-    connectToDB();
+    await connectToDB();
 
     // Find the community by its _id and update the information
     const updatedCommunity = await Community.findOneAndUpdate(
@@ -262,7 +264,7 @@ export async function updateCommunityInfo(
 
 export async function deleteCommunity(communityId: string) {
   try {
-    connectToDB();
+    await connectToDB();
 
     // Find the community by its ID and delete it
     const deletedCommunity = await Community.findOneAndDelete({

@@ -87,3 +87,21 @@ export const formatTimeAgo = (date: string | Date): string => {
     year: "numeric",
   });
 };
+
+export function convertDocToStringId(obj: any): any {
+  if (!obj || typeof obj !== 'object') return obj;
+
+  if (Array.isArray(obj)) {
+    return obj.map(item => convertDocToStringId(item));
+  }
+
+  const newObj: any = {};
+  for (let key in obj) {
+    if (key === '_id' && obj[key]) {
+      newObj[key] = obj[key].toString(); // Convert ObjectId to string
+    } else {
+      newObj[key] = convertDocToStringId(obj[key]); // Recurse nested objects/arrays
+    }
+  }
+  return newObj;
+}

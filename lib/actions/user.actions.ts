@@ -7,12 +7,11 @@ import Community from "../models/community.model";
 import Thread from "../models/thread.model";
 import User from "../models/user.model";
 import { cache } from "react";
-import { connectToDB } from "../mongoose";
+import connectToDB from "../mongoose";
 
 export const fetchUser = async (userId?: string) => {
   try {
-    connectToDB();
-
+    await connectToDB();
 
     return await User.findOne({ id: userId })
       .populate({
@@ -21,7 +20,7 @@ export const fetchUser = async (userId?: string) => {
       })
       .populate({
         path: "threads",
-        model: Thread
+        model: Thread,
       });
   } catch (error: any) {
     throw new Error(`Failed to fetch user: ${error.message}`);
@@ -45,7 +44,7 @@ export async function updateUser({
   image,
 }: Params): Promise<void> {
   try {
-    connectToDB();
+    await connectToDB();
 
     await User.findOneAndUpdate(
       { id: userId },
@@ -69,7 +68,7 @@ export async function updateUser({
 
 export const fetchUserPosts = cache(async (userId: string) => {
   try {
-    connectToDB();
+    await connectToDB();
 
     // Find all threads authored by the user with the given userId
     const threads = await User.findOne({ id: userId })
@@ -116,7 +115,7 @@ export const fetchUsers = cache(
     sortBy?: SortOrder;
   }) => {
     try {
-      connectToDB();
+      await connectToDB();
 
       const skipAmount = (pageNumber - 1) * pageSize;
 
@@ -155,7 +154,7 @@ export const fetchUsers = cache(
 );
 export const getActivity = cache(async (userId: string) => {
   try {
-    connectToDB();
+    await connectToDB();
 
     // Find all threads created by the user
     const userThreads = await Thread.find({ author: userId });
@@ -183,7 +182,7 @@ export const getActivity = cache(async (userId: string) => {
 });
 export async function searchUsers(query: string) {
   try {
-    connectToDB();
+    await connectToDB();
 
     if (!query.trim()) {
       return [];
@@ -195,11 +194,11 @@ export async function searchUsers(query: string) {
         { name: { $regex: query, $options: "i" } },
       ],
     })
-      .select("_id username name image") 
+      .select("_id username name image")
       .limit(5)
       .lean();
 
-    return JSON.parse(JSON.stringify(users)); 
+    return JSON.parse(JSON.stringify(users));
   } catch (error) {
     console.error(error, "Failed to search users");
     return [];

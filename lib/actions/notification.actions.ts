@@ -1,17 +1,17 @@
-'use server';
+"use server";
 import Notification from "../models/notification.model";
 import User from "../models/user.model";
-import { connectToDB } from "../mongoose";
+import connectToDB from "../mongoose";
 
 export const fetchUserNotifications = async (clerkUserId: string) => {
   try {
-    connectToDB();
+    await connectToDB();
 
     console.log("USERID GOT FOR NOTIFICATIONS", clerkUserId);
 
     // ✅ STEP 1: Find user by Clerk ID (string) → get MongoDB ObjectId
     const user = await User.findOne({ id: clerkUserId }).select("_id");
-    
+
     if (!user) {
       console.log("User not found with Clerk ID:", clerkUserId);
       return [];
@@ -35,7 +35,7 @@ export const fetchUserNotifications = async (clerkUserId: string) => {
 };
 export const markAsRead = async (notificationId: string) => {
   try {
-    connectToDB();
+    await connectToDB();
     const result = await Notification.updateOne(
       { _id: notificationId },
       { $set: { read: true } }

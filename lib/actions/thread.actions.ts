@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { connectToDB } from "../mongoose";
+import connectToDB from "../mongoose";
 
 import User from "../models/user.model";
 import Thread from "../models/thread.model";
@@ -12,9 +12,10 @@ import { ObjectId, Document } from "mongoose";
 import { extractMentions } from "@/constants";
 import Notification from "../models/notification.model";
 import Ably from "ably";
+import { convertDocToStringId } from "../utils";
 
 export const fetchPosts = async (pageNumber = 1, pageSize = 20) => {
-  connectToDB();
+  await connectToDB();
 
   const skipAmount = (pageNumber - 1) * pageSize;
 
@@ -25,6 +26,7 @@ export const fetchPosts = async (pageNumber = 1, pageSize = 20) => {
     .populate({
       path: "author",
       model: User,
+      select: "_id id name image", // explicitly select fields
     })
     .populate([
       {
@@ -36,10 +38,12 @@ export const fetchPosts = async (pageNumber = 1, pageSize = 20) => {
     .populate({
       path: "community",
       model: Community,
+      select: "_id id name image", // optional: add more fields
     })
     .populate({
       path: "originalCommunity",
       model: Community,
+      select: "_id id name image",
     })
     .populate({
       path: "originalPost",
@@ -56,22 +60,25 @@ export const fetchPosts = async (pageNumber = 1, pageSize = 20) => {
       populate: {
         path: "author",
         model: User,
-        select: "_id name parentId image",
+        select: "_id id name image",
       },
     })
-    .lean();
+    .lean(); // Important: returns plain JS objects, no Mongoose wrappers
 
   const totalPostsCount = await Thread.countDocuments({
     parentId: { $in: [null, undefined] },
   });
 
-  const posts = await postsQuery.exec();
-  const serializedPosts = JSON.parse(JSON.stringify(posts));
+  let posts = await postsQuery.exec();
+
+  // 💥 CRITICAL: Recursively convert all _id fields to strings
+  const cleanPosts = posts.map((post) => convertDocToStringId(post));
 
   const isNext = totalPostsCount > skipAmount + posts.length;
 
-  return { posts: serializedPosts, isNext };
+  return { posts: cleanPosts, isNext };
 };
+
 interface Params {
   text: {
     title: string;
@@ -109,7 +116,7 @@ export async function createThread({
   path: string;
 }) {
   try {
-    connectToDB();
+    await connectToDB();
 
     console.log("Community ID:", communityId);
 
@@ -217,7 +224,7 @@ export const fetchAllChildThreads = async (
 };
 export async function deleteThread(id: string, path: string) {
   try {
-    connectToDB();
+    await connectToDB();
 
     // Find the thread to be deleted (the main thread)
     const mainThread = await Thread.findById(id).populate("author community");
@@ -273,7 +280,7 @@ export async function deleteThread(id: string, path: string) {
 }
 
 export const fetchThreadById = async (threadId: string) => {
-  connectToDB();
+  await connectToDB();
 
   try {
     const thread = await Thread.findById(threadId)
@@ -324,7 +331,7 @@ export async function addCommentToThread(
   userId: string,
   path: string
 ) {
-  connectToDB();
+  await connectToDB();
 
   try {
     // Find the original thread by its ID
@@ -359,7 +366,6 @@ export async function addCommentToThread(
     // Save updated thread
     await originalThread.save();
 
-    // ✅ REAL-TIME NOTIFICATION VIA ABLY
     try {
       const ably = new Ably.Rest(process.env.ABLY_API_KEY!);
 
@@ -393,13 +399,6 @@ export async function addCommentToThread(
         .get(`user-${threadAuthor.id}`)
         .publish("new-notification", {
           title: "New Comment 💬",
-          excerpt: `${commenter.name} commented on your post!`,
-          threadId: threadId  ,
-          type: "comment",
-          actor: {
-            id: userId,
-            image: threadAuthor.image || "/default-avatar.png", // ← CORRECT USER!
-          },
         });
 
       console.log("Comment - Ably notification published successfully");
@@ -410,7 +409,7 @@ export async function addCommentToThread(
 
     revalidatePath(path);
 
-    return { success: true, message: "Comment added successfully" }; // 👈 Added return
+    return { success: true, message: "Comment added successfully" };
   } catch (err) {
     console.error("Error while adding comment:", err);
     throw new Error("Unable to add comment");
@@ -418,7 +417,7 @@ export async function addCommentToThread(
 }
 export async function upvoteThread(threadId: string, userId: string) {
   try {
-    connectToDB();
+    await connectToDB();
 
     const thread: ThreadType | null = await Thread.findById(threadId);
     if (!thread) {
@@ -458,19 +457,16 @@ export async function upvoteThread(threadId: string, userId: string) {
       }
 
       const authorClerkId = threadAuthor.id; // This is the Clerk user ID
+      const actor = await User.findById(userId);
+      if (!actor) {
+        console.error("Actor user not found");
+        return { success: false, message: "Actor user not found" };
+      }
 
       await ably.channels
         .get(`user-${authorClerkId}`)
         .publish("new-notification", {
           title: "New upvote ❤️",
-          excerpt: "Someone liked your post!",
-          threadId: threadId,
-          type: "upvote",
-          actor: {
-            id: userId,
-            image: threadAuthor.image,
-            name: threadAuthor.name,
-          },
         });
 
       console.log("Ably notification published successfully");
@@ -543,7 +539,7 @@ export const repostThread = async (
 
 export async function updateThread({ threadId, newText, path }: UpdateParams) {
   try {
-    connectToDB();
+    await connectToDB();
     console.log("New Text", newText);
     const thread = await Thread.findById(threadId);
     if (!thread) {
