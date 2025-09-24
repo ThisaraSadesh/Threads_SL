@@ -239,7 +239,7 @@ function MentionHighlighter({ content }: { content: string }) {
                 </span>
               </Link>
 
-              <Repost id={id} currentUserId={currentUserId} />
+              <Repost id={id.toString()} currentUserId={currentUserId.toString()} />
 
               <button
                 className="flex items-center gap-1 text-white/70 hover:text-white transition text-xs"

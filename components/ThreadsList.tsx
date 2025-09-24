@@ -18,7 +18,7 @@ async function ThreadsList({ page, userId }: { page: number; userId: string }) {
               <ThreadCard
                 key={post._id}
                 id={post._id}
-                // currentUserId={userId.toString()}
+                currentUserId={userId.toString()}
                 parentId={post.parentId}
                 content={post.text.title}
                 images={post.text.images}

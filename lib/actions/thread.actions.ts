@@ -72,7 +72,7 @@ export const fetchPosts = async (pageNumber = 1, pageSize = 20) => {
   let posts = await postsQuery.exec();
 
   // 💥 CRITICAL: Recursively convert all _id fields to strings
-  const cleanPosts = posts.map((post) => convertDocToStringId(post));
+  const cleanPosts = JSON.parse(JSON.stringify(posts));
 
   const isNext = totalPostsCount > skipAmount + posts.length;
 
@@ -531,7 +531,52 @@ export const repostThread = async (
   // 6. Add to user’s threads list
   await User.findByIdAndUpdate(userId, { $push: { threads: savedThread._id } });
 
-  // 7. Revalidate feed
+  // 7. Create notification for original post author
+  const originalPost = await Thread.findById(originalPostId).populate({
+    path: "author",
+    model: User,
+    select: "_id id name image",
+  });
+
+  if (originalPost && originalPost.author._id.toString() !== userId) {
+    await Notification.insertOne({
+      userId: originalPost.author._id,
+      actorId: userId,
+      type: "repost",
+      entityId: originalPostId,
+      read: false,
+    });
+
+    try {
+      const ably = new Ably.Rest(process.env.ABLY_API_KEY!);
+
+      const originalAuthor = originalPost.author;
+      const reposter = await User.findById(userId);
+
+      if (reposter) {
+        console.log(
+          "Repost - Publishing to channel:",
+          `user-${originalAuthor.id}`
+        );
+        console.log("Repost - Original author Clerk ID:", originalAuthor.id);
+        console.log("Repost - Reposter Clerk ID:", reposter.id);
+
+        await ably.channels
+          .get(`user-${originalAuthor.id}`)
+          .publish("new-notification", {
+            title: "New repost 🔄",
+          });
+
+        console.log("Repost - Ably notification published successfully");
+      } else {
+        console.error("Repost - Reposter not found");
+      }
+    } catch (error) {
+      console.error("Repost - Failed to publish to Ably:", error);
+    }
+  }
+
+  // 8. Revalidate feed
   revalidatePath("/");
 
   return savedThread;
