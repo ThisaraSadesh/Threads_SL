@@ -100,10 +100,7 @@ function MentionHighlighter({ content }: { content: string }) {
     </p>
   );
 }
-  const getDisplayAuthor = () => {
-    if (isShared && originalPost?.author) return originalPost.author;
-    return author;
-  };
+
   return !isEditing ? (
     <article
       className={`flex w-full flex-col rounded-xl ${
@@ -226,6 +223,8 @@ function MentionHighlighter({ content }: { content: string }) {
               <Link
                 href={`/thread/${id}`}
                 className="flex items-center gap-1 group"
+                prefetch={true}
+                
               >
                 <Image
                   src="/assets/reply.svg"
