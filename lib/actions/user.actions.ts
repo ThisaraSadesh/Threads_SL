@@ -8,23 +8,20 @@ import Thread from "../models/thread.model";
 import User from "../models/user.model";
 import { cache } from "react";
 import connectToDB from "../mongoose";
-
+import mongoose from "mongoose";
 export const fetchUser = async (userId?: string) => {
-  try {
-    await connectToDB();
+  console.log("➡️ [fetchUser] Starting...");
+  console.log("➡️ [fetchUser] userId =", userId);
 
-    return await User.findOne({ id: userId })
-      .populate({
-        path: "communities",
-        model: Community,
-      })
-      .populate({
-        path: "threads",
-        model: Thread,
-      });
-  } catch (error: any) {
-    throw new Error(`Failed to fetch user: ${error.message}`);
-  }
+  await connectToDB();
+  console.log("✅ [fetchUser] DB connected. Ready state:", mongoose.connection.readyState);
+
+  const user = await User.findOne({ id: userId }) // 👈 Use _id unless schema defines "id"
+    .populate("communities")
+    .populate("threads");
+
+  console.log("👤 [fetchUser] Result:", user ? "Found" : "Not found");
+  return user;
 };
 interface Params {
   userId: string;
