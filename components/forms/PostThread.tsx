@@ -434,22 +434,22 @@ const insertMention = (username: string) => {
 
                     <div className="flex items-center gap-2">
                       <div
-                        className="cursor-pointer rounded-lg p-2 h-[40px] w-[40px] flex items-center justify-center bg-muted hover:bg-accent transition"
+                        className="cursor-pointer rounded-lg p-2  flex items-center justify-center  hover:bg-accent transition"
                         onClick={() =>
                           document.getElementById("image-upload")?.click()
                         }
                       >
                         <img
-                          src="/assets/imagelogo.svg"
+                          src="/assets/media.svg"
                           alt="Upload Image"
                           width={24}
                           height={24}
-                          className="w-full h-full"
+                          className=" w-[24px] h-[24px]"
                         />
                       </div>
 
                       <div
-                        className="cursor-pointer rounded-lg p-2 h-[40px] w-[40px] flex items-center justify-center bg-muted hover:bg-accent transition"
+                        className="cursor-pointer rounded-lg p-2  flex items-center justify-center  hover:bg-accent transition"
                         onClick={() => setShowGifPicker(true)}
                       >
                         <img
@@ -457,7 +457,7 @@ const insertMention = (username: string) => {
                           alt="Add GIF"
                           width={24}
                           height={24}
-                          className="w-full h-full"
+                          className="w-[24px] h-[24px]"
                         />
                       </div>
                     </div>
