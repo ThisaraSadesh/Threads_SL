@@ -10,14 +10,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { fetchUser } from "@/lib/actions/user.actions";
 import RepliesTab from "@/components/shared/RepliesTab";
-import { fetchAllChildThreads } from "@/lib/actions/thread.actions";
+import { fetchAllChildThreads, fetchUserTaggedPosts } from "@/lib/actions/thread.actions";
+import TaggedTab from "@/components/shared/TaggedTab";
 
 export default async function Page({ params }: { params: { id: string } }) {
   const user = await currentUser();
   if (!user) return null;
 
   const userInfo = await fetchUser(params.id);
-  console.log("USER INFO DATA", userInfo);
   if (!userInfo?.onboarded) {
     console.log("id from params:", params.id);
     console.log("onboarded is false, redirecting to /onboarding");
@@ -30,7 +30,8 @@ export default async function Page({ params }: { params: { id: string } }) {
 
     return childthreads.length;
   });
-
+const taggedPosts=await fetchUserTaggedPosts(userInfo._id);
+const taggedCount=taggedPosts.taggedCount;
   return (
     <section>
       <ProfileHeader
@@ -64,6 +65,10 @@ export default async function Page({ params }: { params: { id: string } }) {
                   <p className="ml-1 rounded-sm bg-light-4 px-2 py-1 !text-tiny-medium text-light-2">
                     {childThreadsCount}
                   </p>
+                ) : tab.label === "Tagged" ? (
+                  <p className="ml-1 rounded-sm bg-light-4 px-2 py-1 !text-tiny-medium text-light-2">
+                    {taggedCount}
+                  </p>
                 ) : null}
               </TabsTrigger>
             ))}
@@ -89,9 +94,11 @@ export default async function Page({ params }: { params: { id: string } }) {
                 />
               )}
               {tab.value === "tagged" && (
-                <div>
-                  <p>Tagged content will go here</p>
-                </div>
+                <TaggedTab
+                  currentUserId={user.id}
+                  accountId={userInfo._id}
+                  accountType="User"
+                />
               )}
             </TabsContent>
           ))}

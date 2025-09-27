@@ -140,7 +140,7 @@ export async function createThread({
     ) {
       return {
         message: "Your Thread contains sexual, violent, or toxic content!",
-        status: 400, // ⚠️ Use 400 for bad input, not 201
+        status: 400,
       };
     }
 
@@ -634,3 +634,27 @@ export async function updateThread({ threadId, newText, path }: UpdateParams) {
     throw new Error(`Failed to update thread: ${error.message}`);
   }
 }
+
+export const fetchUserTaggedPosts = async (accountId) => {
+  await connectToDB();
+  console.log("PASSED USERID", accountId);
+  const notifications = await Notification.find({
+    userId: accountId,
+    type: "mention",
+  });
+  console.log("FILTERED NOTIFICATIONS", notifications);
+
+  const taggedPosts = notifications.map((not) => not.entityId);
+
+  console.log("TAGGED POSTS", taggedPosts);
+  const threads = await Thread.find({
+    _id: { $in: taggedPosts },
+  }).populate({
+    path:'author',
+    model:User,
+    select: 'id name image'
+  }).lean();
+  console.log("THREADS TO BE RETURNED", threads);
+  console.log('THREADS AUTHOR NAME',threads[0].author.name);
+  return { threads: threads,taggedCount:threads.length };
+};

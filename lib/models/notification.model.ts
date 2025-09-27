@@ -27,6 +27,7 @@ const notificationSchema = new Schema(
     entityId: {
       type: Schema.Types.ObjectId,
       index: true,
+      
     },
 
     excerpt: {
