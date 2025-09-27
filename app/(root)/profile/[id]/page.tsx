@@ -84,21 +84,21 @@ export default async function Page({ params }: { params: { id: string } }) {
             >
               {tab.value === "threads" && (
                 <ThreadsTab
-                  currentUserId={user.id}
+                  currentUserId={userInfo._id}
                   accountId={userInfo.id}
                   accountType="User"
                 />
               )}
               {tab.value === "replies" && (
                 <RepliesTab
-                  currentUserId={user.id}
+                  currentUserId={userInfo._id}
                   accountId={userInfo.id}
                   accountType="User"
                 />
               )}
               {tab.value === "tagged" && (
                 <TaggedTab
-                  currentUserId={user.id}
+                  currentUserId={userInfo._id}
                   accountId={userInfo._id}
                   accountType="User"
                 />

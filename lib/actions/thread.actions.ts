@@ -496,7 +496,7 @@ export async function upvoteThread(threadId: string, userId: string) {
     return { success: true, message: "Upvote added successfully" };
   } catch (error) {
     console.log(error);
-    return { success: false, message: "Something went wrong" };
+    return { success: false, message: "Something went wrong",error };
   }
 }
 
