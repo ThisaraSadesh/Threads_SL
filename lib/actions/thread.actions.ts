@@ -160,21 +160,17 @@ export async function createThread({
     if (validMentionedUserIds.length > 0) {
       await Notification.insertMany(
         validMentionedUserIds.map((userId) => ({
-          userId, 
-          actorId: author, 
+          userId,
+          actorId: author,
           type: "mention",
-          entityId: null, 
-          excerpt: text.title, 
+          entityId: null,
+          excerpt: text.title,
           read: false,
         }))
       );
     }
     console.log("Notification Inserted");
 
-
-
-
-    
     const createdThread = await Thread.create({
       text,
       author,
@@ -192,39 +188,23 @@ export async function createThread({
       );
     }
 
-
-
-
-    try {
-      const ably = new Ably.Rest(process.env.ABLY_API_KEY!);
-
-      // Get the thread author's Clerk user ID
-      const threadAuthor = await User.findById(createdThread.author);
-      if (!threadAuthor) {
-        console.error("Thread author not found");
-        return { success: false, message: "Thread author not found" };
-      }
-
-      const authorClerkId = threadAuthor.id; // This is the Clerk user ID
-      // const actor = await User.findById(userId);
-      // if (!actor) {
-      //   console.error("Actor user not found");
-      //   return { success: false, message: "Actor user not found" };
-      // }
-
-      await ably.channels
-        .get(`user-${authorClerkId}`)
-        .publish("new-notification", {
-          title: "mention ❤️",
-        });
-
-      console.log("Ably notification published successfully");
-    } catch (error) {
-      console.error("Failed to publish to Ably:", error);
-      console.error("Error details:", error);
+    const ably = new Ably.Rest(process.env.ABLY_API_KEY!);
+    const threadAuthor = await User.findById(createdThread.author);
+    if (!threadAuthor) {
+      console.error("Thread author not found");
+      return { success: false, message: "Thread author not found" };
     }
-
-
+    for (const userId of validMentionedUserIds) {
+      const mentionedUser = await User.findById(userId);
+      if (mentionedUser?.id) {
+        await ably.channels
+          .get(`user-${mentionedUser.id}`)
+          .publish("new-notification", {
+            title: `You were mentioned by ${threadAuthor.username}`,
+            threadId: createdThread._id,
+          });
+      }
+    }
 
     await User.findByIdAndUpdate(author, {
       $push: { threads: createdThread._id },
