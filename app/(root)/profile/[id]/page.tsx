@@ -10,7 +10,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { fetchUser } from "@/lib/actions/user.actions";
 import RepliesTab from "@/components/shared/RepliesTab";
-import { fetchAllChildThreads, fetchUserTaggedPosts } from "@/lib/actions/thread.actions";
+import {
+  fetchAllChildThreads,
+  fetchUserTaggedPosts,
+} from "@/lib/actions/thread.actions";
 import TaggedTab from "@/components/shared/TaggedTab";
 
 export default async function Page({ params }: { params: { id: string } }) {
@@ -30,8 +33,8 @@ export default async function Page({ params }: { params: { id: string } }) {
 
     return childthreads.length;
   });
-const taggedPosts=await fetchUserTaggedPosts(userInfo._id);
-const taggedCount=taggedPosts.taggedCount;
+  const taggedPosts = await fetchUserTaggedPosts(userInfo._id);
+  const taggedCount = taggedPosts.taggedCount;
   return (
     <section>
       <ProfileHeader
@@ -62,7 +65,7 @@ const taggedCount=taggedPosts.taggedCount;
                     {userInfo.threads.length}
                   </p>
                 ) : tab.label === "Replies" ? (
-                  <p className="ml-1 rounded-sm bg-light-4 px-2 py-1 !text-tiny-medium text-light-2">
+                  <p className="ml-1 rFounded-sm bg-light-4 px-2 py-1 !text-tiny-medium text-light-2">
                     {childThreadsCount}
                   </p>
                 ) : tab.label === "Tagged" ? (
