@@ -12,7 +12,6 @@ import { ObjectId, Document } from "mongoose";
 import { extractMentions } from "@/constants";
 import Notification from "../models/notification.model";
 import Ably from "ably";
-import { convertDocToStringId } from "../utils";
 
 export const fetchPosts = async (pageNumber = 1, pageSize = 20) => {
   await connectToDB();
@@ -161,16 +160,21 @@ export async function createThread({
     if (validMentionedUserIds.length > 0) {
       await Notification.insertMany(
         validMentionedUserIds.map((userId) => ({
-          userId, // ← Bob gets notified
-          actorId: author, // ← Alice tagged Bob
+          userId, 
+          actorId: author, 
           type: "mention",
-          entityId: null, // ← We'll update after thread is created
-          excerpt: text.title, // ← Preview text
+          entityId: null, 
+          excerpt: text.title, 
           read: false,
         }))
       );
     }
     console.log("Notification Inserted");
+
+
+
+
+    
     const createdThread = await Thread.create({
       text,
       author,
@@ -188,21 +192,53 @@ export async function createThread({
       );
     }
 
+
+
+
+    try {
+      const ably = new Ably.Rest(process.env.ABLY_API_KEY!);
+
+      // Get the thread author's Clerk user ID
+      const threadAuthor = await User.findById(createdThread.author);
+      if (!threadAuthor) {
+        console.error("Thread author not found");
+        return { success: false, message: "Thread author not found" };
+      }
+
+      const authorClerkId = threadAuthor.id; // This is the Clerk user ID
+      // const actor = await User.findById(userId);
+      // if (!actor) {
+      //   console.error("Actor user not found");
+      //   return { success: false, message: "Actor user not found" };
+      // }
+
+      await ably.channels
+        .get(`user-${authorClerkId}`)
+        .publish("new-notification", {
+          title: "mention ❤️",
+        });
+
+      console.log("Ably notification published successfully");
+    } catch (error) {
+      console.error("Failed to publish to Ably:", error);
+      console.error("Error details:", error);
+    }
+
+
+
     await User.findByIdAndUpdate(author, {
       $push: { threads: createdThread._id },
     });
 
-    // 🏘️ Update community's threads list (if applicable)
     if (communityIdObject) {
       await Community.findByIdAndUpdate(communityIdObject, {
         $push: { threads: createdThread._id },
       });
     }
 
-    // 🔄 Revalidate Next.js cache
     revalidatePath(path);
 
-    return { success: true, status: 201 }; // 201 = Created
+    return { success: true, status: 201 };
   } catch (error: any) {
     console.error("CREATE THREAD ERROR:", error);
     throw new Error(`Failed to create thread: ${error.message}`);
