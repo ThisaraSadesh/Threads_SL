@@ -29,7 +29,7 @@ const NotificationContainer = ({ notifications, handleClickNotification }) => {
   };
 
   return (
-    <div className="flex flex-col items-center  justify-start gap-3 overflow-y-scroll overflow-x-hidden h-[465px]">
+    <div className="max-sm:h-[calc(100vh-160px)] max-sm:w-[500px]    flex flex-col items-center  justify-center gap-3 overflow-y-scroll overflow-x-hidden h-[465px]">
       {sortedNotifications &&
         sortedNotifications.map((note: any) => (
           <Link
@@ -37,7 +37,7 @@ const NotificationContainer = ({ notifications, handleClickNotification }) => {
             href={`/thread/${note.entityId}`}
             onClick={() => handleClickNotification(note._id, note.read)}
           >
-            <div className="activity-card text-white">
+            <div className="activity-card text-white ">
               <Image
                 src={note.actorId.image}
                 alt="Profile Picture"

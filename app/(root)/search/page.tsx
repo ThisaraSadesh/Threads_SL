@@ -28,7 +28,7 @@ async function Page({
     userId: user.id,
     searchString: q,
     pageNumber: page,
-    pageSize: 1,
+    pageSize: 5,
   });
 
 

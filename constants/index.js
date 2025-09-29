@@ -9,11 +9,7 @@ export const sidebarLinks = [
     route: "/search",
     label: "Search",
   },
-  {
-    imgURL: "/assets/heart.svg",
-    route: "/activity",
-    label: "Activity",
-  },
+
 
   {
     imgURL: "/assets/community.svg",
