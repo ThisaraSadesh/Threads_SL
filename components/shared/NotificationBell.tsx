@@ -112,7 +112,7 @@ export function NotificationBell({
           </div>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-100 bg-black">
+      <PopoverContent className="w-100 bg-black border-none">
         <NotificationContainer
           notifications={notifications} // ← Now uses local state!
           handleClickNotification={handleClickNotification}
