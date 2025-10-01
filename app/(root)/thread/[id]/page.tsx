@@ -40,6 +40,8 @@ interface Thread extends ThreadChild {
   children: ThreadChild[];
   sharedBy?: Author[];
   upvotes?: string[];
+  expiresAt?:Date
+  focustMode:boolean
 }
 
 const Page = async ({ params }: { params: Promise<{ id: string }> }) => {
@@ -102,6 +104,7 @@ const Page = async ({ params }: { params: Promise<{ id: string }> }) => {
           createdAt={new Date(thread.createdAt).toISOString()}
           comments={thread.children || []}
           upvoteCount={upvotesArrLength}
+          expiresAt={thread.expiresAt}
         />
       </div>
 

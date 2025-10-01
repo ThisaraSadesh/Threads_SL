@@ -49,6 +49,7 @@ interface Props {
   originalCommunity?: Community;
   originalPost?: OriginalPost;
   focusMode: boolean;
+  expiresAt?:string
 }
 
 const ThreadCard = ({
@@ -69,6 +70,7 @@ const ThreadCard = ({
   originalCommunity,
   originalPost,
   focusMode,
+  expiresAt
 }: Props) => {
   const [isEditing, setIsEditing] = useState(false);
   const [showCarousel, setShowCarousel] = useState(false);
@@ -144,7 +146,7 @@ const ThreadCard = ({
                 </h4>
 
                 <div className="flex gap-3 items-center justify-center">
-                  {focusMode && (
+                  {focusMode ? (
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <div onClick={(e) => e.preventDefault()}>
@@ -162,7 +164,10 @@ const ThreadCard = ({
                         </p>
                       </TooltipContent>
                     </Tooltip>
-                  )}
+                  ):expiresAt?(
+                    <span className="text-red-500 text-small-regular">Expires at : {formatDateString(expiresAt)}</span>
+
+                  ):null}
                   {currentUserId?.toString() === author._id && (
                     <MeatBallMenu setIsEditing={setIsEditing} id={id} />
                   )}

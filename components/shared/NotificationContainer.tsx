@@ -29,7 +29,7 @@ const NotificationContainer = ({ notifications, handleClickNotification }) => {
   };
 
   return (
-    <div className="max-sm:h-[calc(100vh-160px)] max-sm:w-screen  flex flex-col items-center  justify-center gap-3 overflow-y-scroll overflow-x-hidden h-[465px]">
+    <div className="max-sm:h-[calc(100vh-160px)] max-sm:w-screen  flex flex-col items-center  justify-center gap-3 overflow-y-scroll overflow-x-hidden h-[550px]">
       {sortedNotifications &&
         sortedNotifications.map((note: any) => (
           <Link
