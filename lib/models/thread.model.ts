@@ -56,6 +56,16 @@ const threadSchema = new mongoose.Schema({
     ref: "Community",
     index: true, 
   },
+
+  focusMode:{
+    type:Boolean,
+    required:true,
+    default:false
+  },
+    expiresAt: { type: Date }, 
+  replyCount: { type: Number, default: 0 },
+
+
 });
 
 
@@ -66,6 +76,8 @@ threadSchema.index({ community: 1, createdAt: -1 });
 threadSchema.index({ parentId: 1, createdAt: -1 });
 
 threadSchema.index({ originalCommunity: 1, createdAt: -1, isShared: 1 });
+threadSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
 
 const Thread = mongoose.models.Thread || mongoose.model("Thread", threadSchema);
 export default Thread;

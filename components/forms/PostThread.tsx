@@ -22,6 +22,12 @@ import { Textarea } from "../ui/textarea";
 import GifPicker, { TenorImage } from "gif-picker-react";
 import { Input } from "@/components/ui/input";
 import { searchUsers } from "@/lib/actions/user.actions"; // ✅ Your server action
+import { Switch } from "../ui/switch";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface TweetFormProps {
   userId: string | undefined;
@@ -61,14 +67,13 @@ export default function TweetForm({
   const [cursorPos, setCursorPos] = useState(0);
   const [suggestedUsers, setSuggestedUsers] = useState<any[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+  const [isFocusMode, setIsFocusMode] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // 🔁 Sync text with form on mount/update
   useEffect(() => {
     setText(data?.title || "");
   }, [data?.title]);
 
-  // 🔍 Debounced user search
   useEffect(() => {
     if (!query.trim()) {
       setSuggestedUsers([]);
@@ -91,7 +96,6 @@ export default function TweetForm({
     return () => clearTimeout(timer);
   }, [query]);
 
-  // 📎 Handle file uploads
   const handleFileChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
     field: any
@@ -116,14 +120,12 @@ export default function TweetForm({
     e.target.value = "";
   };
 
-  // 🎁 Handle GIF selection
   const handleGifClick = (gif: TenorImage) => {
     const url = gif.url;
     setPreview((prev) => [...prev, url]);
     setShowGifPicker(false);
   };
 
-  // 🖊️ Handle form submit
   const onSubmit = async (values: z.infer<typeof ThreadValidation>) => {
     setLoading(true);
 
@@ -182,6 +184,7 @@ export default function TweetForm({
           author: userId,
           communityId: organization ? organization.id : null,
           path: pathname,
+          focusMode:isFocusMode
         });
       } else {
         result = await updateThread({
@@ -208,49 +211,47 @@ export default function TweetForm({
     }
   };
 
-  // ➕ Insert selected user into textarea
-const insertMention = (username: string) => {
-  // Recalculate from current state — don't rely on possibly stale values
-  const currentText = text;
-  const currentCursor = textareaRef.current?.selectionStart || cursorPos;
+  const insertMention = (username: string) => {
+    // Recalculate from current state — don't rely on possibly stale values
+    const currentText = text;
+    const currentCursor = textareaRef.current?.selectionStart || cursorPos;
 
-  // Find the LAST @ before cursor (in case state drifted)
-  const lastAt = currentText.lastIndexOf("@", currentCursor - 1);
+    // Find the LAST @ before cursor (in case state drifted)
+    const lastAt = currentText.lastIndexOf("@", currentCursor - 1);
 
-  if (lastAt === -1) {
-    // Safety fallback — just append at end
-    const newText = `${currentText}@${username} `;
+    if (lastAt === -1) {
+      // Safety fallback — just append at end
+      const newText = `${currentText}@${username} `;
+      setText(newText);
+      form.setValue("tweet", newText, { shouldValidate: true });
+      setShowPopup(false);
+      setQuery("");
+      return;
+    }
+
+    // Calculate how much to cut out
+    const queryStart = lastAt + 1;
+    const queryEnd = currentCursor;
+    const before = currentText.slice(0, lastAt); // everything before "@"
+    const after = currentText.slice(queryEnd); // everything after cursor
+
+    const newText = `${before}@${username} ${after}`;
+
     setText(newText);
     form.setValue("tweet", newText, { shouldValidate: true });
     setShowPopup(false);
     setQuery("");
-    return;
-  }
 
-  // Calculate how much to cut out
-  const queryStart = lastAt + 1;
-  const queryEnd = currentCursor;
-  const before = currentText.slice(0, lastAt); // everything before "@"
-  const after = currentText.slice(queryEnd); // everything after cursor
+    // Refocus & reposition cursor AFTER inserted mention
+    setTimeout(() => {
+      if (textareaRef.current) {
+        const newCursorPos = lastAt + username.length + 2; // +2 for '@' and space
+        textareaRef.current.focus();
+        textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
+      }
+    }, 0);
+  };
 
-  const newText = `${before}@${username} ${after}`;
-
-  setText(newText);
-  form.setValue("tweet", newText, { shouldValidate: true });
-  setShowPopup(false);
-  setQuery("");
-
-  // Refocus & reposition cursor AFTER inserted mention
-  setTimeout(() => {
-    if (textareaRef.current) {
-      const newCursorPos = lastAt + username.length + 2; // +2 for '@' and space
-      textareaRef.current.focus();
-      textareaRef.current.setSelectionRange(newCursorPos, newCursorPos);
-    }
-  }, 0);
-};
-
-  // 🚫 Close popup on outside click
   useEffect(() => {
     const handleClickOutside = () => setShowPopup(false);
     window.addEventListener("click", handleClickOutside);
@@ -461,10 +462,32 @@ const insertMention = (username: string) => {
                         />
                       </div>
                     </div>
-
-                    <Button type="submit" disabled={loading}>
-                      {loading ? "Posting..." : isEditing ? "Update" : "Post"}
-                    </Button>
+                    <div className="flex gap-3 items-center justify-center">
+                      <span className="text-white text-base-regular">
+                        Focus Mode
+                      </span>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div onClick={(e) => e.preventDefault()}>
+                            <Switch
+                              checked={isFocusMode}
+                              onCheckedChange={setIsFocusMode} // ShadCN uses this prop
+                              onPointerDown={(e) => e.preventDefault()}
+                            />{" "}
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p className="line-clamp-4 text-base-regular">
+                            Turn on Focus Mode to create space for deeper
+                            thinking. Your thread will auto-hide after 24 hours
+                            or when replies exceed 100 limit.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                      <Button type="submit" disabled={loading}>
+                        {loading ? "Posting..." : isEditing ? "Update" : "Post"}
+                      </Button>
+                    </div>
                   </div>
 
                   {preview.length > 0 && (

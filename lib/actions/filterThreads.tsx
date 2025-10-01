@@ -4,7 +4,7 @@ const url = 'https://nsfw-text-moderation-api.p.rapidapi.com/moderation_check.ph
   const options: RequestInit = {
     method: 'POST',
    headers: {
-		'x-rapidapi-key': '0cda7e2fafmsheebeb5c839132f4p16e8ccjsn86adbf1de3c4',
+		'x-rapidapi-key': 'de6878b996mshfb07b1939ad6363p1cf9c1jsn462afd33a42c',
 		'x-rapidapi-host': 'nsfw-text-moderation-api.p.rapidapi.com',
 		'Content-Type': 'application/json'
 	},

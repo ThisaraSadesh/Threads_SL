@@ -15,6 +15,7 @@ import Topbar from "@/components/shared/Topbar";
 import AblyClientProvider from "@/app/providers/AblyClientProvider";
 import { Toaster } from "sonner";
 const inter = Inter({ subsets: ["latin"] });
+import { TooltipProvider } from "@radix-ui/react-tooltip";
 
 export const metadata: Metadata = {
   title: "Threads",
@@ -38,20 +39,22 @@ export default function RootLayout({
         <body className={inter.className}>
           <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
           <AblyClientProvider>
-            <Topbar />
+            <TooltipProvider>
+              <Topbar />
 
-            <main className="flex flex-row">
-              <LeftSidebar />
-              <section className="main-container">
-                <Toaster />
+              <main className="flex flex-row">
+                <LeftSidebar />
+                <section className="main-container">
+                  <Toaster />
 
-                <div className="w-full max-w-4xl">{children}</div>
-              </section>
-              {/* @ts-ignore */}
-              <RightSidebar />
-            </main>
+                  <div className="w-full max-w-4xl">{children}</div>
+                </section>
+                {/* @ts-ignore */}
+                <RightSidebar />
+              </main>
 
-            <Bottombar />
+              <Bottombar />
+            </TooltipProvider>
           </AblyClientProvider>
         </body>
       </html>

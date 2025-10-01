@@ -97,6 +97,9 @@ interface ThreadType extends Document {
   children: ObjectId[];
   createdAt: Date;
   upvotes: string[];
+  replyCount: number;
+  expiresAt: Date;
+  FocusMode:boolean
 }
 interface UpdateParams {
   threadId: string;
@@ -108,11 +111,13 @@ export async function createThread({
   author,
   communityId,
   path,
+  focusMode,
 }: {
   text: { title: string; images?: string[] };
   author: string;
   communityId: string | null;
   path: string;
+  focusMode: boolean;
 }) {
   try {
     await connectToDB();
@@ -175,6 +180,9 @@ export async function createThread({
       text,
       author,
       community: communityIdObject,
+      focusMode,
+      expiresAt: focusMode ? new Date(Date.now() + 24 * 60 * 60 * 1000) : undefined,
+      replyCount:0
     });
 
     if (validMentionedUserIds.length > 0) {
@@ -439,6 +447,12 @@ export async function upvoteThread(threadId: string, userId: string) {
     if (!thread) {
       return { success: false, message: "Thread not found" };
     }
+
+    thread.replyCount += 1;
+    if (thread.FocusMode && thread.replyCount >= 100) {
+      thread.expiresAt = new Date(); 
+    }
+
     console.log("userID", userId);
     // Correct conversion
 
@@ -496,7 +510,7 @@ export async function upvoteThread(threadId: string, userId: string) {
     return { success: true, message: "Upvote added successfully" };
   } catch (error) {
     console.log(error);
-    return { success: false, message: "Something went wrong",error };
+    return { success: false, message: "Something went wrong", error };
   }
 }
 
@@ -646,10 +660,12 @@ export const fetchUserTaggedPosts = async (accountId) => {
 
   const threads = await Thread.find({
     _id: { $in: taggedPosts },
-  }).populate({
-    path:'author',
-    model:User,
-    select: 'id name image'
-  }).lean();
-  return { threads: threads,taggedCount:threads.length };
+  })
+    .populate({
+      path: "author",
+      model: User,
+      select: "id name image",
+    })
+    .lean();
+  return { threads: threads, taggedCount: threads.length };
 };
