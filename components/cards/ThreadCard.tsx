@@ -11,6 +11,7 @@ import { ProfileImage } from "../shared/ProfileImage";
 import PostThread from "../../components/forms/PostThread";
 import { CarouselSize } from "../shared/Carousel";
 import { MeatBallMenu } from "../shared/MeatBallMenu";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
 
 interface Author {
   name: string;
@@ -47,6 +48,7 @@ interface Props {
   userIdfromDB?: ObjectId;
   originalCommunity?: Community;
   originalPost?: OriginalPost;
+  focusMode: boolean;
 }
 
 const ThreadCard = ({
@@ -66,6 +68,7 @@ const ThreadCard = ({
   userIdfromDB,
   originalCommunity,
   originalPost,
+  focusMode,
 }: Props) => {
   const [isEditing, setIsEditing] = useState(false);
   const [showCarousel, setShowCarousel] = useState(false);
@@ -80,26 +83,28 @@ const ThreadCard = ({
     if (isShared && originalCommunity) return originalCommunity;
     return community;
   };
-function MentionHighlighter({ content }: { content: string }) {
-  if (!content) return <span className="text-light-2">No content</span>;
+  function MentionHighlighter({ content }: { content: string }) {
+    if (!content) return <span className="text-light-2">No content</span>;
 
-  const parts = content.split(/(\s+)/);
+    const parts = content.split(/(\s+)/);
 
-  return (
-    <p className="text-small-regular break-words text-light-2"> {/* 👈 Apply color here */}
-      {parts.map((part, index) => {
-        if (part.startsWith("@") && !part.includes(" ")) {
-          return (
-            <span key={index} className="text-blue font-medium">
-              {part}
-            </span>
-          );
-        }
-        return <span key={index}>{part}</span>; // Inherits color from parent <p>
-      })}
-    </p>
-  );
-}
+    return (
+      <p className="text-small-regular break-words text-light-2">
+        {" "}
+        {/* 👈 Apply color here */}
+        {parts.map((part, index) => {
+          if (part.startsWith("@") && !part.includes(" ")) {
+            return (
+              <span key={index} className="text-blue font-medium">
+                {part}
+              </span>
+            );
+          }
+          return <span key={index}>{part}</span>; // Inherits color from parent <p>
+        })}
+      </p>
+    );
+  }
 
   return !isEditing ? (
     <article
@@ -122,7 +127,7 @@ function MentionHighlighter({ content }: { content: string }) {
 
           <div
             className={`flex flex-col gap-3 ${
-              isShared ? "bg-gray-950 p-3 rounded-lg" : ""
+              isShared ? "bg-black p-3 rounded-lg" : ""
             }`}
           >
             {isShared ? (
@@ -137,21 +142,35 @@ function MentionHighlighter({ content }: { content: string }) {
                 <h4 className="font-semibold text-sm text-white">
                   {author.name || "Unknown User"}
                 </h4>
-                {currentUserId?.toString() === author._id && (
-                  // <button
-                  //   onClick={() => setIsEditing(true)}
-                  //   className="text-gray-400 hover:text-white transition"
-                  //   aria-label="Edit post"
-                  // >
-                  //   <img src={"/assets/edit.svg"} />
-                  // </button>
-                  <MeatBallMenu setIsEditing={setIsEditing} id={id} />
-                )}
+
+                <div className="flex gap-3 items-center justify-center">
+                  {focusMode && (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div onClick={(e) => e.preventDefault()}>
+                          <Image
+                            width={20}
+                            height={20}
+                            src={"assets/timer.svg"}
+                            alt="timer"
+                          />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p className="line-clamp-4 text-x-small-semibold">
+                         Focus Mode Enabled ✔︎
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  )}
+                  {currentUserId?.toString() === author._id && (
+                    <MeatBallMenu setIsEditing={setIsEditing} id={id} />
+                  )}
+                </div>
               </div>
             )}
 
-           <MentionHighlighter content={content} />
-
+            <MentionHighlighter content={content} />
 
             {images.length > 0 && (
               <div className="flex gap-3 items-start justify-start flex-wrap">
@@ -224,7 +243,6 @@ function MentionHighlighter({ content }: { content: string }) {
                 href={`/thread/${id}`}
                 className="flex items-center gap-1 group"
                 prefetch={true}
-                
               >
                 <Image
                   src="/assets/reply.svg"
@@ -238,7 +256,10 @@ function MentionHighlighter({ content }: { content: string }) {
                 </span>
               </Link>
 
-              <Repost id={id.toString()} currentUserId={currentUserId.toString()} />
+              <Repost
+                id={id.toString()}
+                currentUserId={currentUserId.toString()}
+              />
 
               <button
                 className="flex items-center gap-1 text-white/70 hover:text-white transition text-xs"

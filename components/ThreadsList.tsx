@@ -31,6 +31,7 @@ async function ThreadsList({ page, userId }: { page: number; userId: string }) {
                 SharedBy={post.sharedBy}
                 originalCommunity={post.originalCommunity}
                 originalPost={post.originalPost}
+                focusMode={post.focusMode}
               />
             );
           })}

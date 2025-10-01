@@ -22,7 +22,7 @@ export function MeatBallMenu({ setIsEditing, id }) {
   };
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+      <DropdownMenuTrigger asChild className="bg-white">
         <Button variant="ghost" size="icon">
           <MoreVertical className="h-5 w-5" />
         </Button>
