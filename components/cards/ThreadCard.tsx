@@ -49,7 +49,7 @@ interface Props {
   originalCommunity?: Community;
   originalPost?: OriginalPost;
   focusMode: boolean;
-  expiresAt?:string
+  expiresAt?: string;
 }
 
 const ThreadCard = ({
@@ -70,7 +70,7 @@ const ThreadCard = ({
   originalCommunity,
   originalPost,
   focusMode,
-  expiresAt
+  expiresAt,
 }: Props) => {
   const [isEditing, setIsEditing] = useState(false);
   const [showCarousel, setShowCarousel] = useState(false);
@@ -102,7 +102,7 @@ const ThreadCard = ({
               </span>
             );
           }
-          return <span key={index}>{part}</span>; // Inherits color from parent <p>
+          return <span key={index}>{part}</span>;
         })}
       </p>
     );
@@ -160,14 +160,15 @@ const ThreadCard = ({
                       </TooltipTrigger>
                       <TooltipContent className="max-w-xs">
                         <p className="line-clamp-4 text-x-small-semibold">
-                         Focus Mode Enabled ✔︎
+                          Focus Mode Enabled ✔︎
                         </p>
                       </TooltipContent>
                     </Tooltip>
-                  ):expiresAt?(
-                    <span className="text-red-500 text-small-regular">Expires at : {formatDateString(expiresAt)}</span>
-
-                  ):null}
+                  ) : expiresAt ? (
+                    <span className="text-red-500 text-small-regular">
+                      Expires at : {formatDateString(expiresAt)}
+                    </span>
+                  ) : null}
                   {currentUserId?.toString() === author._id && (
                     <MeatBallMenu setIsEditing={setIsEditing} id={id} />
                   )}
