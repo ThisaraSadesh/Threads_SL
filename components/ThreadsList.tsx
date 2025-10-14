@@ -14,6 +14,7 @@ async function ThreadsList({ page, userId }: { page: number; userId: string }) {
         <>
           {result.posts.map((post) => {
             const upvotesArrLength = post.upvotes?.length;
+            if(post.status === "scheduled") return null;
             return (
               <ThreadCard
                 key={post._id}

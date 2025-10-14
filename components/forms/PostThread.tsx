@@ -28,6 +28,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Calendar24 } from "../shared/Calender";
 
 interface TweetFormProps {
   userId: string | undefined;
@@ -68,6 +69,7 @@ export default function TweetForm({
   const [suggestedUsers, setSuggestedUsers] = useState<any[]>([]);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
+  const [scheduleTime, setScheduleTime] = useState<Date>();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -184,7 +186,8 @@ export default function TweetForm({
           author: userId,
           communityId: organization ? organization.id : null,
           path: pathname,
-          focusMode:isFocusMode
+          focusMode: isFocusMode,
+          scheduleTime: scheduleTime,
         });
       } else {
         result = await updateThread({
@@ -484,6 +487,7 @@ export default function TweetForm({
                           </p>
                         </TooltipContent>
                       </Tooltip>
+                      <Calendar24  setScheduleTime={setScheduleTime}/>
                       <Button type="submit" disabled={loading}>
                         {loading ? "Posting..." : isEditing ? "Update" : "Post"}
                       </Button>

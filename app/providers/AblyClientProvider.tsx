@@ -42,7 +42,7 @@ export default function AblyClientProvider({
 
     clientCreatedRef.current = true;
     setIsConnecting(true);
-    const prefix = process.env.NEXT_PUBLIC_API_ROOT || "";
+    const prefix = process.env.z || "";
     console.log("Initializing Ably with auth URL:", `${prefix}/api/ably-token`);
 
     // Set a timeout to prevent infinite connecting state

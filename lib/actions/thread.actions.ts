@@ -12,6 +12,7 @@ import { ObjectId, Document } from "mongoose";
 import { extractMentions } from "@/constants";
 import Notification from "../models/notification.model";
 import Ably from "ably";
+import { inngest } from "@/app/inngest/client";
 
 export const fetchPosts = async (pageNumber = 1, pageSize = 20) => {
   await connectToDB();
@@ -99,7 +100,7 @@ interface ThreadType extends Document {
   upvotes: string[];
   replyCount: number;
   expiresAt: Date;
-  FocusMode:boolean
+  FocusMode: boolean;
 }
 interface UpdateParams {
   threadId: string;
@@ -112,12 +113,14 @@ export async function createThread({
   communityId,
   path,
   focusMode,
+  scheduleTime,
 }: {
   text: { title: string; images?: string[] };
   author: string;
   communityId: string | null;
   path: string;
   focusMode: boolean;
+  scheduleTime: Date;
 }) {
   try {
     await connectToDB();
@@ -181,9 +184,32 @@ export async function createThread({
       author,
       community: communityIdObject,
       focusMode,
-      expiresAt: focusMode ? new Date(Date.now() + 24 * 60 * 60 * 1000) : undefined,
-      replyCount:0
+      expiresAt: focusMode
+        ? new Date(
+            scheduleTime ? scheduleTime : Date.now() + 24 * 60 * 60 * 1000
+          )
+        : undefined,
+      replyCount: 0,
+      status: scheduleTime ? "scheduled" : "published",
+      scheduledAt: scheduleTime ? scheduleTime : Date.now(),
     });
+
+    // If this is a scheduled thread, send an event to Inngest
+    if (scheduleTime) {
+      try {
+        await inngest.send({
+          name: "publish-scheduled-threads",
+          data: {
+            threadId: createdThread._id.toString(),
+            scheduledAt: scheduleTime.toISOString(),
+          },
+        });
+        console.log("✅ Scheduled thread event sent to Inngest");
+      } catch (error) {
+        console.error("❌ Failed to send scheduled thread event to Inngest:", error);
+        // Don't throw - we still want to create the thread even if event sending fails
+      }
+    }
 
     if (validMentionedUserIds.length > 0) {
       await Notification.updateMany(
@@ -450,7 +476,7 @@ export async function upvoteThread(threadId: string, userId: string) {
 
     thread.replyCount += 1;
     if (thread.FocusMode && thread.replyCount >= 100) {
-      thread.expiresAt = new Date(); 
+      thread.expiresAt = new Date();
     }
 
     console.log("userID", userId);

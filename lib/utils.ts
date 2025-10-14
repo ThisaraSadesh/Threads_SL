@@ -105,3 +105,14 @@ export function convertDocToStringId(obj: any): any {
   }
   return newObj;
 }
+
+export const combineDateTime = (date: Date | undefined, timeString: string): Date | null => {
+  if (!date) return null;
+
+  const [hours, minutes] = timeString.split(':').map(Number);
+
+  const combined = new Date(date);
+  combined.setHours(hours, minutes, 0, 0); // set time, zero seconds & ms
+
+  return combined;
+};

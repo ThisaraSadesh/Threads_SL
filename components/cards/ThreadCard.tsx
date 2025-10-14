@@ -232,54 +232,71 @@ const ThreadCard = ({
           )}
 
           <div className="flex flex-col mt-4">
-            <div className="flex gap-3.5 items-center">
-              <Suspense
-                fallback={
-                  <div className="w-8 h-8 bg-gray-700 rounded animate-pulse" />
-                }
-              >
-                <Upvote
-                  id={id}
-                  currentUserId={currentUserId}
-                  upvoteCount={upvoteCount}
-                />
-              </Suspense>
+            <div className="flex justify-between items-center">
+              <div className="flex gap-3.5 items-center">
+                <Suspense
+                  fallback={
+                    <div className="w-8 h-8 bg-gray-700 rounded animate-pulse" />
+                  }
+                >
+                  <Upvote
+                    id={id}
+                    currentUserId={currentUserId}
+                    upvoteCount={upvoteCount}
+                  />
+                </Suspense>
 
-              <Link
-                href={`/thread/${id}`}
-                className="flex items-center gap-1 group"
-                prefetch={true}
-              >
-                <Image
-                  src="/assets/reply.svg"
-                  alt="reply"
-                  width={20}
-                  height={20}
-                  className="cursor-pointer object-contain group-hover:opacity-80 transition"
-                />
-                <span className="text-white text-xs font-light group-hover:underline">
-                  {comments.length}
-                </span>
-              </Link>
+                <Link
+                  href={`/thread/${id}`}
+                  className="flex items-center gap-1 group"
+                  prefetch={true}
+                >
+                  <Image
+                    src="/assets/reply.svg"
+                    alt="reply"
+                    width={20}
+                    height={20}
+                    className="cursor-pointer object-contain group-hover:opacity-80 transition"
+                  />
+                  <span className="text-white text-xs font-light group-hover:underline">
+                    {comments.length}
+                  </span>
+                </Link>
 
-              <Repost
-                id={id.toString()}
-                currentUserId={currentUserId.toString()}
-              />
-
-              <button
-                className="flex items-center gap-1 text-white/70 hover:text-white transition text-xs"
-                aria-label="Share post"
-              >
-                <Image
-                  src="/assets/share.svg"
-                  alt="share"
-                  width={20}
-                  height={20}
-                  className="cursor-pointer object-contain"
+                <Repost
+                  id={id.toString()}
+                  currentUserId={currentUserId.toString()}
                 />
-                Share
-              </button>
+
+                <button
+                  className="flex items-center gap-1 text-white/70 hover:text-white transition text-xs"
+                  aria-label="Share post"
+                >
+                  <Image
+                    src="/assets/share.svg"
+                    alt="share"
+                    width={20}
+                    height={20}
+                    className="cursor-pointer object-contain"
+                  />
+                  Share
+                </button>
+              </div>
+              <div className="flex items-center justify-center">
+                <>
+                  {comments.slice(0, 2).map((cmnt, index) => (
+                    <Image
+                      key={index}
+                      src={cmnt.author.image}
+                      alt="authorImage"
+                      width={20}
+                      height={20}
+                      className="rounded-full w-[20px] h-[20px]"
+                    />
+                  ))}
+                  {comments.length > 3 && <p className="text-white text-x-small-semibold">+{comments.length-2} More</p>}
+                </>
+              </div>
             </div>
 
             {isShared && !isComment && getDisplayCommunity() && (
