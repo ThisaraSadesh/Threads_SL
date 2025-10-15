@@ -27,6 +27,7 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@svgr/webpack": "^8.1.0",
     "@uploadthing/react": "^7.3.2",
+    "@vercel/speed-insights": "^1.2.0",
     "ably": "^2.11.0",
     "autoprefixer": "^10.4.21",
     "bottleneck": "^2.19.5",

@@ -16,6 +16,7 @@ import AblyClientProvider from "@/app/providers/AblyClientProvider";
 import { Toaster } from "sonner";
 const inter = Inter({ subsets: ["latin"] });
 import { TooltipProvider } from "@radix-ui/react-tooltip";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
   title: "Threads",
@@ -47,7 +48,10 @@ export default function RootLayout({
                 <section className="main-container">
                   <Toaster />
 
-                  <div className="w-full max-w-4xl">{children}</div>
+                  <div className="w-full max-w-4xl">
+                    {children}
+                    <SpeedInsights />
+                  </div>
                 </section>
                 {/* @ts-ignore */}
                 <RightSidebar />
