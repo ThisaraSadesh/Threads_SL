@@ -249,7 +249,7 @@ const ThreadCard = ({
                 <Link
                   href={`/thread/${id}`}
                   className="flex items-center gap-1 group"
-                  prefetch={true}
+                  // prefetch={true}
                 >
                   <Image
                     src="/assets/reply.svg"

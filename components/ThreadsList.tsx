@@ -1,10 +1,10 @@
 import ThreadCard from "@/components/cards/ThreadCard";
 import Pagination from "@/components/shared/Pagination";
 import { fetchPosts } from "@/lib/actions/thread.actions";
+import LoadMore from "./shared/LoadMore";
 
 async function ThreadsList({ page, userId }: { page: number; userId: string }) {
-  const result = await fetchPosts(page, 30);
-
+  const result = await fetchPosts(1, 5);
 
   return (
     <section className="mt-9 flex flex-col gap-10">
@@ -14,7 +14,7 @@ async function ThreadsList({ page, userId }: { page: number; userId: string }) {
         <>
           {result.posts.map((post) => {
             const upvotesArrLength = post.upvotes?.length;
-            if(post.status === "scheduled") return null;
+            if (post.status === "scheduled") return null;
             return (
               <ThreadCard
                 key={post._id}
@@ -39,7 +39,7 @@ async function ThreadsList({ page, userId }: { page: number; userId: string }) {
         </>
       )}
 
-      <Pagination path="/" pageNumber={page} isNext={result.isNext} />
+      <LoadMore userId={userId} />
     </section>
   );
 }
