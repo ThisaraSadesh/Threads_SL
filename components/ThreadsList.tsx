@@ -4,7 +4,7 @@ import { fetchPosts } from "@/lib/actions/thread.actions";
 import LoadMore from "./shared/LoadMore";
 
 async function ThreadsList({ page, userId }: { page: number; userId: string }) {
-  const result = await fetchPosts(1, 5);
+  const result = await fetchPosts(page, 5);
 
   return (
     <section className="mt-9 flex flex-col gap-10">
@@ -38,8 +38,8 @@ async function ThreadsList({ page, userId }: { page: number; userId: string }) {
           })}
         </>
       )}
-
       <LoadMore userId={userId} />
+      {/* <Pagination path="/" pageNumber={page} isNext={result.isNext} /> */}
     </section>
   );
 }
